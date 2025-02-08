@@ -10,7 +10,7 @@ fi
 cd build
 
 # Run cmake to configure the project
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. -D CMAKE_BUILD_TYPE=Debug
 
 ln -sf "$(pwd)/compile_commands.json" ../compile_commands.json
 # Build the project using make

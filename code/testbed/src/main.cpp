@@ -1,7 +1,7 @@
 #include <vulkan/vulkan.h>
 
-#include <iostream>
 #include <core/logger.hpp>
+#include <iostream>
 
 int main() {
     // Check if Vulkan is available
@@ -9,11 +9,11 @@ int main() {
 
     VkResult result = vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionCount, nullptr);
     if (result != VK_SUCCESS) {
-        std::cerr << "Failed to enumerate Vulkan instance extensions!" << std::endl;
+        KERROR("Failed to enumerate Vulkan instance extensions!");
         return -1;
     }
 
-    std::cout << "Vulkan is supported. Number of instance extensions: " << instanceExtensionCount << std::endl;
+    KINFO("Vulkan is supported. Number of instance extensions: %d", instanceExtensionCount);
 
     // Create Vulkan instance
     VkApplicationInfo appInfo = {};

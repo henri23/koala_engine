@@ -44,8 +44,9 @@ void log_output(log_level level, const char *message, ...) {
     // Prepend log level to the message string
     sprintf(prepended_message, "%s%s\n", level_strings[level], out_message);
 
+    // TODO: Make the logging platform agnostic
     // Platform specific output
     // FATAL,ERROR,WARN,INFO,DEBUG,TRACE
     const char *colour_strings[] = {"0;41", "1;31", "1;33", "1;32", "1;34", "1;30"};
-    printf("\033[%sm%s\033[0m", colour_strings[level], message);
+    printf("\033[%sm%s\033[0m", colour_strings[level], prepended_message);
 }

@@ -3,10 +3,15 @@ project(koala_engine)
 
 set(CMAKE_CXX_STANDARD 23)
 
+# Define project MACROS
+add_compile_definitions(KEXPORT)
+
+# Include all files recursivelly (header files do not need to be included)
 file(GLOB_RECURSE ENGINE_SRC "src/*.cpp")
 
+# Link with external libraries
 find_package(Vulkan REQUIRED)
-add_compile_definitions(KEXPORT)
+
 add_library(${PROJECT_NAME} SHARED ${ENGINE_SRC})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
