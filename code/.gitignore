@@ -1,0 +1,6 @@
+bin/
+obj/
+build/
+.cache/
+
+*compile_flags.txt
