@@ -1,7 +1,6 @@
 #include <vulkan/vulkan.h>
 
 #include <core/logger.hpp>
-#include <iostream>
 
 int main() {
     // Check if Vulkan is available

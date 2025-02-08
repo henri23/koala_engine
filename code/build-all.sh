@@ -1,19 +1,22 @@
 echo "Building everything..."
 
-# Check if the 'build' directory exists
-if [ ! -d "build" ]; then
-  # If the 'build' directory does not exist, create it
-  mkdir build
-fi
-
-# Change into the 'build' directory
-cd build
+# # Check if the 'build' directory exists
+# if [ ! -d "bin" ]; then
+#   # If the 'build' directory does not exist, create it
+#   mkdir bin 
+# fi
+#
+# # Change into the 'build' directory
+# cd bin
 
 # Run cmake to configure the project
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. -D CMAKE_BUILD_TYPE=Debug
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -B../bin . -D CMAKE_BUILD_TYPE=Debug
+# cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. -D CMAKE_BUILD_TYPE=Debug
 
-ln -sf "$(pwd)/compile_commands.json" ../compile_commands.json
+cd ../bin
+ln -sf "$(pwd)/compile_commands.json" ../code/compile_commands.json
 # Build the project using make
+
 make
 
 ERRORLEVEL=$?
