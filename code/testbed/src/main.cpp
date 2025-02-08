@@ -1,6 +1,7 @@
 #include <vulkan/vulkan.h>
 
 #include <iostream>
+#include <core/logger.hpp>
 
 int main() {
     // Check if Vulkan is available
@@ -31,12 +32,11 @@ int main() {
     result = vkCreateInstance(&createInfo, nullptr, &instance);
 
     if (result == VK_SUCCESS) {
-        std::cout << "Vulkan instance created successfully." << std::endl;
-
+        KDEBUG("Vulkan initialized correctly!");
         // Destroy Vulkan instance
         vkDestroyInstance(instance, nullptr);
     } else {
-        std::cerr << "Failed to create Vulkan instance!" << std::endl;
+        KDEBUG("Failed to create Vulkan instance!");
         return -1;
     }
 

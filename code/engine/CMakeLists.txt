@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.16)
+project(koala_engine)
+
+set(CMAKE_CXX_STANDARD 23)
+
+file(GLOB_RECURSE ENGINE_SRC "src/*.cpp")
+
+find_package(Vulkan REQUIRED)
+add_compile_definitions(KEXPORT)
+add_library(${PROJECT_NAME} SHARED ${ENGINE_SRC})
+
+target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
+target_include_directories(${PROJECT_NAME} PUBLIC "src")
+
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "koala_engine")
+
