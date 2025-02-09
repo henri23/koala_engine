@@ -2,7 +2,6 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
 
 b8 initialize_logging() {
     // TODO: create log file
@@ -29,12 +28,8 @@ void log_output(log_scope scope, log_level level, const char *message, ...) {
 
     b8 is_error = level < LOG_LEVEL_WARN;
 
-    // NOTE:  In order to dissmiss alocating dynamically the message string we can set a character limit, and allocate
-    //        the message in the stack, which is much faster
-
     const s32 msg_length = 32000;
-    char out_message[msg_length];
-    memset(out_message, 0, sizeof(out_message));
+    char out_message[msg_length] = {};
 
     // NOTE:  MS's headers override the GCC/Clang va_list type with a "typedef char* va_list" in some cases, and as a
     //        result throws a strange error here. The workaround for now is to just use __builtin_va_list, which is the
@@ -50,6 +45,7 @@ void log_output(log_scope scope, log_level level, const char *message, ...) {
     sprintf(prepended_message, "%s%s%s\n", scope_strings[scope], level_strings[level], out_message);
 
     // TODO: Make the logging platform agnostic
+
     // Platform specific output
     // FATAL,ERROR,WARN,INFO,DEBUG,TRACE
     const char *colour_strings[] = {"0;41", "1;31", "1;33", "1;32", "1;34", "1;30"};

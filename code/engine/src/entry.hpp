@@ -5,7 +5,7 @@
 
 extern b8 create_game();
 
-int main() {
+int main(void) {
     if(!create_game()) {
         ENGINE_FATAL("Failed to create game application");
         return -1;

@@ -1,4 +1,5 @@
 #!bin/bash
+echo "=============================================="
 echo "[BUILDER]: Building everything..."
 
 # # Check if the 'build' directory exists
@@ -27,7 +28,9 @@ echo "[BUILDER]: Error:"$ERRORLEVEL && exit
 fi
 
 echo "[BUILDER]: All assemblies built successfully."
-echo "[BUILDER]: Running testbed"
+echo "[BUILDER]: Launching testbed..."
+echo "=============================================="
+echo ""
 
 cd testbed
 ./testbed
