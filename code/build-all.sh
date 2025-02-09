@@ -1,4 +1,5 @@
-echo "Building everything..."
+#!bin/bash
+echo "[BUILDER]: Building everything..."
 
 # # Check if the 'build' directory exists
 # if [ ! -d "bin" ]; then
@@ -22,7 +23,12 @@ make
 ERRORLEVEL=$?
 if [ $ERRORLEVEL -ne 0 ]
 then
-echo "Error:"$ERRORLEVEL && exit
+echo "[BUILDER]: Error:"$ERRORLEVEL && exit
 fi
 
-echo "All assemblies built successfully."
+echo "[BUILDER]: All assemblies built successfully."
+echo "[BUILDER]: Running testbed"
+
+cd testbed
+./testbed
+

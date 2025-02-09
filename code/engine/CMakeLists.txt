@@ -4,7 +4,7 @@ project(koala_engine)
 set(CMAKE_CXX_STANDARD 23)
 
 # Define project MACROS
-add_compile_definitions(KEXPORT)
+add_compile_definitions(KOALA_EXPORT)
 
 # Include all files recursivelly (header files do not need to be included)
 file(GLOB_RECURSE ENGINE_SRC "src/*.cpp")

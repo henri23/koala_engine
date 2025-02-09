@@ -13,7 +13,7 @@ void shutdown_logging() {
     // TODO: cleanup logging/write queued entries
 }
 
-void log_output(log_level level, const char *message, ...) {
+void log_output(log_scope scope, log_level level, const char *message, ...) {
     const char *level_strings[6] = {
         "[FATAL]: ",
         "[ERROR]: ",
@@ -21,6 +21,11 @@ void log_output(log_level level, const char *message, ...) {
         "[INFO]: ",
         "[DEBUG]: ",
         "[TRACE]: "};
+
+    const char *scope_strings[2] = {
+        "ENGINE | ",
+        "GAME   | "
+    };
 
     b8 is_error = level < LOG_LEVEL_WARN;
 
@@ -42,7 +47,7 @@ void log_output(log_level level, const char *message, ...) {
 
     char prepended_message[msg_length];
     // Prepend log level to the message string
-    sprintf(prepended_message, "%s%s\n", level_strings[level], out_message);
+    sprintf(prepended_message, "%s%s%s\n", scope_strings[scope], level_strings[level], out_message);
 
     // TODO: Make the logging platform agnostic
     // Platform specific output

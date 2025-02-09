@@ -23,39 +23,56 @@ typedef enum log_level {
     LOG_LEVEL_TRACE = 5,
 } log_level;
 
+typedef enum log_scope {
+    ENGINE = 0,
+    GAME = 1
+} log_scope;
+
 b8 initialize_logging();
 void shutdown_logging();
 
-// The (...) means that the function can take a dynamic number of arguments
-KAPI void log_output(log_level level, const char* message, ...);
+KOALA_API void log_output(log_scope scope, log_level level, const char* message, ...);
 
 // The __VA_ARGS__ is the way clang/gcc handles variable arguments
-#define KFATAL(message, ...) log_output(LOG_LEVEL_FATAL, message, ##__VA_ARGS__);
+#define ENGINE_FATAL(message, ...) log_output(ENGINE, LOG_LEVEL_FATAL, message, ##__VA_ARGS__);
+#define GAME_FATAL(message, ...) log_output(GAME, LOG_LEVEL_FATAL, message, ##__VA_ARGS__);
 
-#ifndef KERROR
-#define KERROR(message, ...) log_output(LOG_LEVEL_ERROR, message, ##__VA_ARGS__);
+#ifndef ENGINE_ERROR
+#define ENGINE_ERROR(message, ...) log_output(ENGINE, LOG_LEVEL_ERROR, message, ##__VA_ARGS__);
+#endif
+
+#ifndef GAME_ERROR
+#define GAME_ERROR(message, ...) log_output(GAME, LOG_LEVEL_ERROR, message, ##__VA_ARGS__);
 #endif
 
 #if LOG_WARN_ENABLED == 1
-#define KWARN(message, ...) log_output(LOG_LEVEL_WARN, message, ##__VA_ARGS__);
+#define ENGINE_WARN(message, ...) log_output(ENGINE, LOG_LEVEL_WARN, message, ##__VA_ARGS__);
+#define GAME_WARN(message, ...) log_output(GAME, LOG_LEVEL_WARN, message, ##__VA_ARGS__);
 #else
-#define KWARN(message, ...) // Do nothing when warning is turned off
+#define ENGINE_WARN(message, ...) 
+#define GAME_WARN(message, ...) 
 #endif
 
 #if LOG_TRACE_ENABLED == 1
-#define KTRACE(message, ...) log_output(LOG_LEVEL_TRACE, message, ##__VA_ARGS__);
+#define ENGINE_TRACE(message, ...) log_output(ENGINE, LOG_LEVEL_TRACE, message, ##__VA_ARGS__);
+#define GAME_TRACE(message, ...) log_output(GAME, LOG_LEVEL_TRACE, message, ##__VA_ARGS__);
 #else 
-#define KTRACE(message, ...)
+#define ENGINE_TRACE(message, ...) 
+#define GAME_TRACE(message, ...) 
 #endif
 
 #if LOG_INFO_ENABLED == 1
-#define KINFO(message, ...) log_output(LOG_LEVEL_INFO, message, ##__VA_ARGS__);
+#define ENGINE_INFO(message, ...) log_output(ENGINE, LOG_LEVEL_INFO, message, ##__VA_ARGS__);
+#define GAME_INFO(message, ...) log_output(GAME, LOG_LEVEL_INFO, message, ##__VA_ARGS__);
 #else 
-#define KINFO(message, ...)
+#define ENGINE_INFO(message, ...)
+#define GAME_INFO(message, ...)
 #endif
 
 #if LOG_DEBUG_ENABLED == 1
-#define KDEBUG(message, ...) log_output(LOG_LEVEL_DEBUG, message, ##__VA_ARGS__);
+#define ENGINE_DEBUG(message, ...) log_output(ENGINE, LOG_LEVEL_DEBUG, message, ##__VA_ARGS__);
+#define GAME_DEBUG(message, ...) log_output(GAME, LOG_LEVEL_DEBUG, message, ##__VA_ARGS__);
 #else 
-#define KDEBUG(message, ...)
+#define ENGINE_DEBUG(message, ...) 
+#define GAME_DEBUG(message, ...) 
 #endif
