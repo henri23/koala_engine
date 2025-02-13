@@ -16,8 +16,8 @@ void log_output(log_scope scope, log_level level, const char *message, ...) {
     const char *level_strings[6] = {
         "[FATAL]: ",
         "[ERROR]: ",
-        "[WARN]: ",
-        "[INFO]: ",
+        "[WARN]:  ",
+        "[INFO]:  ",
         "[DEBUG]: ",
         "[TRACE]: "};
 
