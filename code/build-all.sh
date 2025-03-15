@@ -28,6 +28,7 @@ echo "[BUILDER]: Error:"$ERRORLEVEL && exit
 fi
 
 echo "[BUILDER]: All assemblies built successfully."
+echo
 echo "[BUILDER]: Launching testbed..."
 echo "=============================================="
 echo ""
