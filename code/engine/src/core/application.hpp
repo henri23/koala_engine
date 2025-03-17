@@ -2,7 +2,9 @@
 
 #include "defines.hpp"
 
-b8 create_application();
+b8 application_initialize();
 
-void run_application();
+void application_run();
+
+void application_shutdown();
 

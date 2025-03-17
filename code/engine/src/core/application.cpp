@@ -11,7 +11,7 @@ struct application_state {
 
 internal application_state application_state;
 
-b8 create_application() {
+b8 application_initialize() {
     // Initialize all subsystems
     initialize_logging();
 
@@ -24,10 +24,23 @@ b8 create_application() {
     return TRUE;
 }
 
-void run_application() {
+void application_run() {
     application_state.is_running = TRUE;
     ENGINE_DEBUG("Application loop is starting...");
 
     while (application_state.is_running) {
+        // For each iteration read the new messages from the message queue 
+        if(!platform_read_events(&application_state.platform_state)){
+            application_state.is_running = FALSE;
+        }
+
+        // Frame 
     }
+
+    application_shutdown();
+}
+
+void application_shutdown() {
+    ENGINE_DEBUG("Application is being shut down...");
+    platform_shutdown(&application_state.platform_state);
 }

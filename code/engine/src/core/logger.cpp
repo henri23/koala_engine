@@ -1,4 +1,5 @@
 #include "logger.hpp"
+#include "platform/platform.hpp"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -47,7 +48,5 @@ void log_output(log_scope scope, log_level level, const char *message, ...) {
     // TODO: Make the logging platform agnostic
 
     // Platform specific output
-    // FATAL,ERROR,WARN,INFO,DEBUG,TRACE
-    const char *colour_strings[] = {"0;41", "1;31", "1;33", "1;32", "1;34", "1;30"};
-    printf("\033[%sm%s\033[0m", colour_strings[level], prepended_message);
+    platform_console_write(prepended_message, level);
 }

@@ -12,14 +12,14 @@ int main(void) {
         return -1;
     }
 
-    if(!create_application()) {
+    if(!application_initialize()) {
         ENGINE_FATAL("Failed to create application");
         return -1;
     }
 
     ENGINE_INFO("Game application created successfully");
 
-    run_application();
+    application_run();
 
     return 0;
 }
