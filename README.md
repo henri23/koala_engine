@@ -6,6 +6,12 @@ This work represents a novel atempt at creating a 3D game engine developed in C+
 
 The engine is named Koala Engine as a tribute to the lovable and resilient nature of koalas. Just like how a koala thrives in diverse environments with adaptability and charm, Koala Engine is designed to be flexible and robust, capable of supporting developers in creating a wide variety of 3D games. The name reflects the engine's focus on being user-friendly yet powerful—much like the calm and dependable koala, the engine is built to be a reliable companion in your game development journey. Plus, who wouldn't love the idea of a koala helping you build your dream game?
 
+## Important links
+
+- Xlib Manual: https://tronche.com/gui/x/xlib
+- Vulkan API: https://docs.vulkan.org/spec/latest/chapters/introduction.html
+- XCB Documentation: https://xcb.freedesktop.org/
+
 ## Roadmap
 
 See [here](TODO.md).

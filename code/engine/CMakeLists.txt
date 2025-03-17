@@ -17,5 +17,12 @@ add_library(${PROJECT_NAME} SHARED ${ENGINE_SRC})
 target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
 target_include_directories(${PROJECT_NAME} PUBLIC "src")
 
+# Check if the platform is Linux
+if(UNIX)
+    target_link_libraries(${PROJECT_NAME} PRIVATE xcb xcb-util)
+elseif(WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE user32)
+endif()
+
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "koala_engine")
 
