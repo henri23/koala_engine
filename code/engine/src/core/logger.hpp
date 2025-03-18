@@ -25,7 +25,8 @@ enum log_level {
 
 enum log_scope {
     ENGINE = 0,
-    GAME = 1
+    GAME = 1,
+    ASSERTS = 2
 };
 
 b8 initialize_logging();

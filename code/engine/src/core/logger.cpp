@@ -1,8 +1,9 @@
 #include "logger.hpp"
-#include "platform/platform.hpp"
 
 #include <stdarg.h>
 #include <stdio.h>
+
+#include "platform/platform.hpp"
 
 b8 initialize_logging() {
     // TODO: create log file
@@ -13,8 +14,8 @@ void shutdown_logging() {
     // TODO: cleanup logging/write queued entries
 }
 
-void log_output(log_scope scope, log_level level, const char *message, ...) {
-    const char *level_strings[6] = {
+void log_output(log_scope scope, log_level level, const char* message, ...) {
+    const char* level_strings[6] = {
         "[FATAL]: ",
         "[ERROR]: ",
         "[WARN]:  ",
@@ -22,10 +23,9 @@ void log_output(log_scope scope, log_level level, const char *message, ...) {
         "[DEBUG]: ",
         "[TRACE]: "};
 
-    const char *scope_strings[2] = {
+    const char* scope_strings[2] = {
         "ENGINE | ",
-        "GAME   | "
-    };
+        "GAME   | "};
 
     b8 is_error = level < LOG_LEVEL_WARN;
 
@@ -49,4 +49,12 @@ void log_output(log_scope scope, log_level level, const char *message, ...) {
 
     // Platform specific output
     platform_console_write(prepended_message, level);
+}
+
+KOALA_API void report_assertion_failure(
+    const char* expression,
+    const char* message,
+    const char* file,
+    s32 line) {
+    log_output(ASSERTS, LOG_LEVEL_FATAL, "Assertion failure: %s failed with message '%s', file %s, line %d\n", expression, message, file, line);
 }
