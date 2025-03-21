@@ -31,11 +31,10 @@ b8 application_initialize() {
 
     memory_startup(); // Depends on: platform, logger
 
-
     ENGINE_DEBUG("Subsystems initialized correctly.");
     is_initialized = TRUE;
 
-    ENGINE_DEBUG(memory_get_current_usage()); // Memory leak because the heap allocated string must be deallocated
+    ENGINE_DEBUG(memory_get_current_usage()); // WARN: Memory leak because the heap allocated string must be deallocated
 
     return TRUE;
 }
