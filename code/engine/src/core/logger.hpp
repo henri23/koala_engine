@@ -29,8 +29,8 @@ enum log_scope {
     ASSERTS = 2
 };
 
-b8 initialize_logging();
-void shutdown_logging();
+b8 log_startup();
+void log_shutdown();
 
 KOALA_API void log_output(log_scope scope, log_level level, const char* message, ...);
 

@@ -31,10 +31,8 @@ KOALA_API void report_assertion_failure(
     }
 
 #define RUNTIME_ASSERT(expr) RUNTIME_ASSERT_MSG(expr, "") 
-#define COMP_TIME_ASSERT(expr, message) static_assert(expr, message)
 
 #else
 #define RUNTIME_ASSERT_MSG(expr, message) 
 #define RUNTIME_ASSERT(expr) 
-#define COMP_TIME_ASSERT(expr, message) 
 #endif

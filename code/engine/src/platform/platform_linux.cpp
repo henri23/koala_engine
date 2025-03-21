@@ -110,6 +110,8 @@ b8 platform_startup(
         return FALSE;
     }
 
+    ENGINE_DEBUG("Platform layer with LINUX interface initialized")
+
     return TRUE;
 }
 
@@ -157,6 +159,8 @@ void platform_shutdown(platform_state* plat_state) {
     xcb_disconnect(state->connection);
 
     platform_free(plat_state->internal_state, TRUE);
+
+    ENGINE_DEBUG("Platform layer shutting down...");
 }
 
 void* platform_allocate(u64 size, b8 aligned) {

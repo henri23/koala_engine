@@ -5,12 +5,14 @@
 
 #include "platform/platform.hpp"
 
-b8 initialize_logging() {
+b8 log_startup() {
+    ENGINE_DEBUG("Loggin subsystem initialized");
     // TODO: create log file
     return TRUE;
 }
 
-void shutdown_logging() {
+void log_shutdown() {
+    ENGINE_DEBUG("Loggin subsystem shutting down...");
     // TODO: cleanup logging/write queued entries
 }
 

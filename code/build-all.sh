@@ -12,14 +12,15 @@ echo "[BUILDER]: Building everything..."
 # cd bin
 
 # Run cmake to configure the project
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -B../bin . -D CMAKE_BUILD_TYPE=Debug
+time cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -B../bin . -D CMAKE_BUILD_TYPE=Debug
 # cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. -D CMAKE_BUILD_TYPE=Debug
 
 cd ../bin
 ln -sf "$(pwd)/compile_commands.json" ../code/compile_commands.json
 # Build the project using make
 
-make
+
+time make
 
 ERRORLEVEL=$?
 if [ $ERRORLEVEL -ne 0 ]

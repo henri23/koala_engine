@@ -39,6 +39,10 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes");
 #define TRUE 1
 #define FALSE 0
 
+#define GIB ((u64)1 << 30)
+#define MIB ((u64)1 << 20)
+#define KIB ((u64)1 << 10)
+
 #define local_persist static
 #define internal static
 #define global_variable static
@@ -100,6 +104,3 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes");
 #define KOALA_API
 #endif
 #endif
-
-#define KCLAMP(value, min, max) (value <= min) ? min : (value >= max) ? max \
-                                                                      : value;
