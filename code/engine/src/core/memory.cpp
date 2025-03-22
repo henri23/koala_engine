@@ -102,7 +102,7 @@ KOALA_API char* memory_get_current_usage() {
     // This is because the buffer will go out of scope after we return and the value will be jibrish
     // We need one more byte for the null terminator character as the strlen disregards it
     u64 length = strlen(utilization_buffer);
-    char* copy = (char *)memory_allocate(length + 1, MEMORY_TAG_STRING);
+    char* copy = static_cast<char *>(memory_allocate(length + 1, MEMORY_TAG_STRING));
     memory_copy(copy, utilization_buffer, length + 1);
 
     return copy;

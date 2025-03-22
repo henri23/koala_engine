@@ -47,8 +47,6 @@ void log_output(log_scope scope, log_level level, const char* message, ...) {
     // Prepend log level to the message string
     sprintf(prepended_message, "%s%s%s\n", scope_strings[scope], level_strings[level], out_message);
 
-    // TODO: Make the logging platform agnostic
-
     // Platform specific output
     platform_console_write(prepended_message, level);
 }

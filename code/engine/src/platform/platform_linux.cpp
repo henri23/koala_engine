@@ -124,9 +124,10 @@ b8 platform_read_events(platform_state* plat_state) {
     b8 quit_flagged = FALSE;
 
     while ((generic_event = xcb_poll_for_event(state->connection))) {
+
         switch (XCB_EVENT_RESPONSE_TYPE(generic_event)) {
             case XCB_EXPOSE: {
-                ENGINE_INFO("Expose");
+                ENGINE_DEBUG("Expose");
             } break;
             case XCB_KEY_PRESS:
             case XCB_KEY_RELEASE: {
@@ -146,9 +147,12 @@ b8 platform_read_events(platform_state* plat_state) {
             default:
                 break;
         }
-    }
 
-    free(generic_event);
+        // NOTE:  We need to free the event after every event because the events will be dynamically allocated
+        //        by XCB when we poll for new events. They are dynamically allocated because the events can
+        //        differ in size so they cannot be stack allocated. We can fix this for internal events with unions
+        free(generic_event);
+    }
 
     return !quit_flagged;
 }
@@ -206,7 +210,7 @@ void platform_sleep(u64 ms) {
     ts.tv_nsec = (ms % 1000) * 1000 * 1000;
     nanosleep(&ts, 0);
 #else
-    if(ms >= 1000) {
+    if (ms >= 1000) {
         sleep(ms / 1000);
     }
     usleep((ms % 1000) * 1000);
