@@ -60,6 +60,10 @@ KOALA_API void* memory_copy(void* destination, const void* source, u64 size) {
     return platform_copy_memory(destination, source, size);
 }
 
+KOALA_API void* memory_move(void* destination, const void* source, u64 size) {
+    return platform_move_memory(destination, source, size);
+}
+
 KOALA_API void* memory_set(void* block, s32 value, u64 size) {
     return platform_set_memory(block, value, size);
 }

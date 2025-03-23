@@ -33,6 +33,11 @@ KOALA_API void* memory_copy(
     const void* source,
     u64 size);
 
+KOALA_API void* memory_move(
+    void* destination,
+    const void* source,
+    u64 size);
+
 KOALA_API void* memory_set(
     void* block,
     s32 value,

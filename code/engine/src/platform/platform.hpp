@@ -37,6 +37,11 @@ void* platform_copy_memory(
     const void* source,
     u64 size);
 
+void* platform_move_memory(
+    void* dest,
+    const void* source,
+    u64 size);
+
 void* platform_set_memory(
     void* dest,
     s32 value,

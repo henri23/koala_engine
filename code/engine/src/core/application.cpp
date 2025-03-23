@@ -3,6 +3,7 @@
 #include "core/logger.hpp"
 #include "core/memory.hpp"
 #include "platform/platform.hpp"
+#include "containers/darray.hpp"
 
 struct application_state {
     b8 is_running;
@@ -33,6 +34,36 @@ b8 application_initialize() {
 
     ENGINE_DEBUG("Subsystems initialized correctly.");
     is_initialized = TRUE;
+
+    void* test_array = darray_create(u64);
+    u64 test1 = 4;
+    u64 test2 = 5;
+    u64 test3 = 6;
+    u64 test4 = 7;
+    darray_push(test_array, test1);
+    darray_push(test_array, test2);
+    darray_push(test_array, test3);
+    darray_push(test_array, test4);
+    u64 array_length = darray_length(test_array);
+    for(u32 i = 0; i < array_length; ++i) {
+        void* element = memory_allocate(sizeof(u64), MEMORY_TAG_UNKNOWN);
+        darray_pop(test_array, element);
+        ENGINE_DEBUG("Element %d:%d", i, *(static_cast<u64*>(element)));
+        memory_deallocate(element, sizeof(u64), MEMORY_TAG_UNKNOWN);
+    }
+    darray_push(test_array, test1);
+    darray_push(test_array, test2);
+    darray_push(test_array, test3);
+    darray_push(test_array, test4);
+    darray_push_at(test_array, 2, test4); 
+    array_length = darray_length(test_array);
+    for(u32 i = 0; i < array_length; ++i) {
+        void* element = memory_allocate(sizeof(u64), MEMORY_TAG_UNKNOWN);
+        darray_pop(test_array, element);
+        ENGINE_DEBUG("Element %d:%d", i, *(static_cast<u64*>(element)));
+        memory_deallocate(element, sizeof(u64), MEMORY_TAG_UNKNOWN);
+    }
+    darray_destroy(test_array);
 
     ENGINE_DEBUG(memory_get_current_usage()); // WARN: Memory leak because the heap allocated string must be deallocated
 

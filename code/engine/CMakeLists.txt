@@ -26,8 +26,3 @@ endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "koala_engine")
 
-if(CMAKE_BUILD_TYPE MATCHES "Debug")
-  target_link_options(${PROJECT_NAME}
-    BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address
-  )
-endif()

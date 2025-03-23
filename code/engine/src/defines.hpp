@@ -104,3 +104,4 @@ typedef char b8;
 #define KOALA_API
 #endif
 #endif
+#define SKIP_ASAN __attribute__((no_sanitize("address")))
