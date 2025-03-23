@@ -17,6 +17,7 @@ b8 create_game(game* game_inst) {
     game_inst->render = game_render;
     game_inst->update = game_update;
     game_inst->on_resize = game_on_resize;
+    game_inst->shutdown = game_shutdown;
 
     // WARN: Memory leak in this case because we never deallocate
     game_inst->state = memory_allocate(sizeof(game_state), memory_tag::GAME);

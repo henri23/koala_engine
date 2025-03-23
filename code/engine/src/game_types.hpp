@@ -10,6 +10,7 @@ struct game {
     b8 (*update)(game* game_inst, f32 delta_time);
     b8 (*render)(game* game_inst, f32 delta_time);
     void (*on_resize)(game* game_inst, u32 width, u32 height);
+    void (*shutdown)(game* game_inst);
 
     void* state;
 };

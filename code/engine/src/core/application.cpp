@@ -94,6 +94,7 @@ void application_run() {
 }
 
 void application_shutdown() {
+    application_state.game_inst->shutdown(application_state.game_inst);
     // Start shutting down subsystems in reverse order to the startup order
     memory_shutdown();
     platform_shutdown(&application_state.platform_state);
