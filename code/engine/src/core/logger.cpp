@@ -29,7 +29,7 @@ void log_output(log_scope scope, log_level level, const char* message, ...) {
         "ENGINE | ",
         "GAME   | "};
 
-    b8 is_error = level < LOG_LEVEL_WARN;
+    b8 is_error = (u64)level < (u64)log_level::WARN;
 
     const s32 msg_length = 32000;
     char out_message[msg_length] = {};
@@ -45,10 +45,15 @@ void log_output(log_scope scope, log_level level, const char* message, ...) {
 
     char prepended_message[msg_length];
     // Prepend log level to the message string
-    sprintf(prepended_message, "%s%s%s\n", scope_strings[scope], level_strings[level], out_message);
+    sprintf(
+        prepended_message,
+        "%s%s%s\n",
+        scope_strings[static_cast<u64>(scope)],
+        level_strings[static_cast<u64>(level)],
+        out_message);
 
     // Platform specific output
-    platform_console_write(prepended_message, level);
+    platform_console_write(prepended_message, static_cast<u64>(level));
 }
 
 KOALA_API void report_assertion_failure(
@@ -56,5 +61,9 @@ KOALA_API void report_assertion_failure(
     const char* message,
     const char* file,
     s32 line) {
-    log_output(ASSERTS, LOG_LEVEL_FATAL, "Assertion failure: %s failed with message '%s', file %s, line %d\n", expression, message, file, line);
+    log_output(
+        log_scope::ASSERTS,
+        log_level::FATAL,
+        "Assertion failure: %s failed with message '%s', file %s, line %d\n",
+        expression, message, file, line);
 }

@@ -2,13 +2,13 @@
 
 #include "defines.hpp"
 
-enum memory_tag {
-    MEMORY_TAG_UNKNOWN,
-    MEMORY_TAG_DARRAY,
-    MEMORY_TAG_EVENTS,
-    MEMORY_TAG_STRING,
+enum class memory_tag {
+    UNKNOWN,
+    DARRAY,
+    EVENTS,
+    STRING,
 
-    MEMORY_TAG_MAX_ENTRIES
+    MAX_ENTRIES
 };
 
 void memory_startup();

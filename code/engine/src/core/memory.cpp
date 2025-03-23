@@ -9,12 +9,12 @@
 
 struct memory_stats {
     u64 total_allocated;
-    u64 tagged_allocations[MEMORY_TAG_MAX_ENTRIES];
+    u64 tagged_allocations[(u64)memory_tag::MAX_ENTRIES];
 };
 
 internal memory_stats stats;
 
-internal const char* memory_tag_strings[MEMORY_TAG_MAX_ENTRIES] = {
+internal const char* memory_tag_strings[(u64)memory_tag::MAX_ENTRIES] = {
     "UNKNOWN  :",
     "DARRAY   :",
     "STRING   :",
@@ -30,11 +30,11 @@ void memory_shutdown() {
 }
 
 KOALA_API void* memory_allocate(u64 size, memory_tag tag) {
-    if (tag == MEMORY_TAG_UNKNOWN) {
+    if (tag == memory_tag::UNKNOWN) {
         ENGINE_WARN("The memory is being initialized as UNKNOWN. Please allocated it with the proper tag");
     }
 
-    stats.tagged_allocations[tag] += size;
+    stats.tagged_allocations[(u64)tag] += size;
     stats.total_allocated += size;
 
     // Every chunk of memory will be set to 0 automatically
@@ -46,7 +46,7 @@ KOALA_API void* memory_allocate(u64 size, memory_tag tag) {
 }
 
 KOALA_API void memory_deallocate(void* block, u64 size, memory_tag tag) {
-    stats.tagged_allocations[tag] -= size;
+    stats.tagged_allocations[(u64)tag] -= size;
     stats.total_allocated -= size;
 
     return platform_free(block, TRUE);
@@ -74,7 +74,8 @@ KOALA_API char* memory_get_current_usage() {
 
     u64 offset = strlen(utilization_buffer);  // The offset is represented in number of bytes
 
-    for (u32 i = 0; i < MEMORY_TAG_MAX_ENTRIES; ++i) {
+    u64 max_tags = static_cast<u64>(memory_tag::MAX_ENTRIES);
+    for (u32 i = 0; i < max_tags; ++i) {
         char usage_unit[4] = "XiB";
         f32 amount = 1.0f;
 
@@ -106,7 +107,7 @@ KOALA_API char* memory_get_current_usage() {
     // This is because the buffer will go out of scope after we return and the value will be jibrish
     // We need one more byte for the null terminator character as the strlen disregards it
     u64 length = strlen(utilization_buffer);
-    char* copy = static_cast<char *>(memory_allocate(length + 1, MEMORY_TAG_STRING));
+    char* copy = static_cast<char *>(memory_allocate(length + 1, memory_tag::STRING));
     memory_copy(copy, utilization_buffer, length + 1);
 
     return copy;
