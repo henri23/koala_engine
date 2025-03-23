@@ -3,16 +3,24 @@
 #include "defines.hpp"
 #include "core/application.hpp"
 #include "core/logger.hpp"
+#include "game_types.hpp"
 
-extern b8 create_game();
+extern b8 create_game(game* game_inst);
 
-int main(void) {
-    if(!create_game()) {
+int main() {
+
+    game game_inst;
+    if(!create_game(&game_inst)) {
         ENGINE_FATAL("Failed to create game");
         return -1;
     }
 
-    if(!application_initialize()) {
+    if(!game_inst.initialize || !game_inst.update || !game_inst.render || !game_inst.on_resize){
+        ENGINE_FATAL("Missing game callback functions");
+        return -1; 
+    }
+
+    if(!application_initialize(&game_inst)) {
         ENGINE_FATAL("Failed to create application");
         return -1;
     }

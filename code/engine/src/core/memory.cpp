@@ -17,8 +17,10 @@ internal memory_stats stats;
 internal const char* memory_tag_strings[(u64)memory_tag::MAX_ENTRIES] = {
     "UNKNOWN  :",
     "DARRAY   :",
+    "EVENTS   :",
     "STRING   :",
-    "EVENTS   :"};
+    "GAME     :",
+};
 
 void memory_startup() {
     platform_zero_memory(&stats, sizeof(stats));
@@ -67,10 +69,10 @@ void* memory_copy(void* destination, const void* source, u64 size) {
         return destination;
     }
 
-    // NOTE:  Since we are adding the size to the integer value of the address, the compiler must 
+    // NOTE:  Since we are adding the size to the integer value of the address, the compiler must
     //        copy 'size' bytes to the destination. When copying 'size' bytes, the address value
-    //        will be incremented by ('size' - 1). So if the max_addr coincides with min_addr + size - 1 
-    //        there will be overlap. 
+    //        will be incremented by ('size' - 1). So if the max_addr coincides with min_addr + size - 1
+    //        there will be overlap.
     if (source_addr > dest_addr && source_addr < dest_addr + size)
         is_overlap = TRUE;
     else if (dest_addr > source_addr && dest_addr < source_addr + size)

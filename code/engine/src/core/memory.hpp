@@ -7,6 +7,7 @@ enum class memory_tag {
     DARRAY,
     EVENTS,
     STRING,
+    GAME,
 
     MAX_ENTRIES
 };
