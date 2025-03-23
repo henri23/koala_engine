@@ -3,6 +3,7 @@
 #include "core/logger.hpp"
 #include "core/memory.hpp"
 #include "platform/platform.hpp"
+#include "containers/darray.hpp"
 
 struct application_state {
     b8 is_running;

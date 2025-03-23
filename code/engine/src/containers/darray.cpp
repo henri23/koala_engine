@@ -96,7 +96,7 @@ void* _darray_insert_at(void* array, u32 index, const void* value_ptr) {
     // we need to copy all the elements from the index until the end to the next slots adjacent
     if (index != length - 1)
         // Since the two memory regions overlap, we use memmove instead of memcpy because it is safer
-        memory_move(
+        memory_copy(
             (address + (index + 1) * stride),
             (address + index * stride),
             (length - index) * stride);
@@ -127,7 +127,7 @@ void darray_pop_at(void* array, u32 index, void* dest) {
         stride);
 
     if (index != length - 1)
-        memory_move(
+        memory_copy(
             (address + index * stride),
             (address + (index + 1) * stride),
             (length - index - 1) * stride);

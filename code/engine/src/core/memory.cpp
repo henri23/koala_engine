@@ -29,7 +29,7 @@ void memory_shutdown() {
     ENGINE_DEBUG("Memory subsystem shutting down...");
 }
 
-KOALA_API void* memory_allocate(u64 size, memory_tag tag) {
+void* memory_allocate(u64 size, memory_tag tag) {
     if (tag == memory_tag::UNKNOWN) {
         ENGINE_WARN("The memory is being initialized as UNKNOWN. Please allocated it with the proper tag");
     }
@@ -45,31 +45,54 @@ KOALA_API void* memory_allocate(u64 size, memory_tag tag) {
     return block;
 }
 
-KOALA_API void memory_deallocate(void* block, u64 size, memory_tag tag) {
+void memory_deallocate(void* block, u64 size, memory_tag tag) {
     stats.tagged_allocations[(u64)tag] -= size;
     stats.total_allocated -= size;
 
     return platform_free(block, TRUE);
 }
 
-KOALA_API void* memory_zero(void* block, u64 size) {
+void* memory_zero(void* block, u64 size) {
     return platform_zero_memory(block, size);
 }
 
-KOALA_API void* memory_copy(void* destination, const void* source, u64 size) {
-    return platform_copy_memory(destination, source, size);
+void* memory_copy(void* destination, const void* source, u64 size) {
+    b8 is_overlap = FALSE;
+
+    u64 dest_addr = reinterpret_cast<u64>(destination);
+    u64 source_addr = reinterpret_cast<u64>(source);
+
+    if (source_addr == dest_addr) {
+        ENGINE_WARN("Method memory_copy() called with identical source and destination addresses. No action will occur");
+        return destination;
+    }
+
+    // NOTE:  Since we are adding the size to the integer value of the address, the compiler must 
+    //        copy 'size' bytes to the destination. When copying 'size' bytes, the address value
+    //        will be incremented by ('size' - 1). So if the max_addr coincides with min_addr + size - 1 
+    //        there will be overlap. 
+    if (source_addr > dest_addr && source_addr < dest_addr + size)
+        is_overlap = TRUE;
+    else if (dest_addr > source_addr && dest_addr < source_addr + size)
+        is_overlap = TRUE;
+
+    if (!is_overlap)
+        return platform_copy_memory(destination, source, size);
+    else {
+        ENGINE_DEBUG("Method memory_copy() called with overlapping regions of memory, using memmove() instead");
+        return platform_move_memory(destination, source, size);
+    }
 }
 
-KOALA_API void* memory_move(void* destination, const void* source, u64 size) {
+void* memory_move(void* destination, const void* source, u64 size) {
     return platform_move_memory(destination, source, size);
 }
 
-KOALA_API void* memory_set(void* block, s32 value, u64 size) {
+void* memory_set(void* block, s32 value, u64 size) {
     return platform_set_memory(block, value, size);
 }
 
-KOALA_API char* memory_get_current_usage() {
-
+char* memory_get_current_usage() {
     char utilization_buffer[5000] = "Summary of allocated memory (tagged):\n";
 
     u64 offset = strlen(utilization_buffer);  // The offset is represented in number of bytes
@@ -107,7 +130,7 @@ KOALA_API char* memory_get_current_usage() {
     // This is because the buffer will go out of scope after we return and the value will be jibrish
     // We need one more byte for the null terminator character as the strlen disregards it
     u64 length = strlen(utilization_buffer);
-    char* copy = static_cast<char *>(memory_allocate(length + 1, memory_tag::STRING));
+    char* copy = static_cast<char*>(memory_allocate(length + 1, memory_tag::STRING));
     memory_copy(copy, utilization_buffer, length + 1);
 
     return copy;
