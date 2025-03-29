@@ -11,6 +11,7 @@ The engine is named Koala Engine as a tribute to the lovable and resilient natur
 - Xlib Manual: https://tronche.com/gui/x/xlib
 - Vulkan API: https://docs.vulkan.org/spec/latest/chapters/introduction.html
 - XCB Documentation: https://xcb.freedesktop.org/
+- XCB Tutorials: https://www.x.org/releases/current/doc/libxcb/tutorial/index.html
 
 ## Roadmap
 
