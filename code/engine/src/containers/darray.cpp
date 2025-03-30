@@ -10,6 +10,7 @@ void* _darray_create(u64 capacity, u64 stride) {
         memory_allocate(
             array_length,
             memory_tag::DARRAY));
+
     header[(u64)darray_header::CAPACITY] = capacity;
     header[(u64)darray_header::LENGTH] = 0;
     header[(u64)darray_header::STRIDE] = stride;

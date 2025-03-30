@@ -18,7 +18,7 @@ b8 game_render(game* game_inst, f32 delta_time) {
 }
 
 void game_on_resize(game* game_inst, u32 width, u32 height) {
-    GAME_INFO("Called game_on_resize()");
+    GAME_INFO("Called game_on_resize() with Width: %d and Height: %d", width, height);
 }
 
 void game_shutdown(game* game_inst) {

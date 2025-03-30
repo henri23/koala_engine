@@ -12,6 +12,8 @@ The engine is named Koala Engine as a tribute to the lovable and resilient natur
 - Vulkan API: https://docs.vulkan.org/spec/latest/chapters/introduction.html
 - XCB Documentation: https://xcb.freedesktop.org/
 - XCB Tutorials: https://www.x.org/releases/current/doc/libxcb/tutorial/index.html
+- ASCII code chart: https://www.ascii-code.com/
+- Windows key codes: https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 
 ## Roadmap
 

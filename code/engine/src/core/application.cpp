@@ -1,5 +1,6 @@
 #include "application.hpp"
 
+#include "core/event.hpp"
 #include "core/logger.hpp"
 #include "core/memory.hpp"
 #include "game_types.hpp"
@@ -28,6 +29,9 @@ b8 application_initialize(game* game_inst) {
 
     application_state.game_inst = game_inst;
 
+    application_state.width = application_state.game_inst->config.start_width;
+    application_state.height = application_state.game_inst->config.start_height;
+
     // Initialize all subsystems
     log_startup();
 
@@ -42,6 +46,11 @@ b8 application_initialize(game* game_inst) {
     }
 
     memory_startup();  // Depends on: platform, logger
+
+    if (!event_startup()) {
+        ENGINE_ERROR("Failed to start event subsystem. Already initialized!");
+        return FALSE;
+    }
 
     if (!application_state.game_inst->initialize(application_state.game_inst)) {
         ENGINE_ERROR("Failed to create game");
@@ -70,7 +79,7 @@ void application_run() {
 
     while (application_state.is_running) {
         // For each iteration read the new messages from the message queue
-        if (!platform_read_events(&application_state.platform_state)) {
+        if (!platform_message_pump(&application_state.platform_state)) {
             application_state.is_running = FALSE;
         }
 
@@ -96,6 +105,7 @@ void application_run() {
 void application_shutdown() {
     application_state.game_inst->shutdown(application_state.game_inst);
     // Start shutting down subsystems in reverse order to the startup order
+    event_shutdown();
     memory_shutdown();
     platform_shutdown(&application_state.platform_state);
     log_shutdown();

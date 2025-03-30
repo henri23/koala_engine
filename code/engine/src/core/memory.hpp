@@ -8,6 +8,7 @@ enum class memory_tag {
     EVENTS,
     STRING,
     GAME,
+    INPUT,
 
     MAX_ENTRIES
 };

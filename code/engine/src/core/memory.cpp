@@ -20,6 +20,7 @@ internal const char* memory_tag_strings[(u64)memory_tag::MAX_ENTRIES] = {
     "EVENTS   :",
     "STRING   :",
     "GAME     :",
+    "INPUT    :",
 };
 
 void memory_startup() {

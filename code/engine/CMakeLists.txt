@@ -19,7 +19,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC "src")
 
 # Check if the platform is Linux
 if(UNIX)
-    target_link_libraries(${PROJECT_NAME} PRIVATE xcb xcb-util xcb-icccm)
+    target_link_libraries(${PROJECT_NAME} PRIVATE xcb xcb-util xcb-keysyms xcb-icccm X11)
 elseif(WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE user32)
 endif()

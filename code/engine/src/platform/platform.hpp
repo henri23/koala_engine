@@ -17,7 +17,7 @@ b8 platform_startup(
 void platform_shutdown(
     platform_state* plat_state);
 
-b8 platform_read_events(
+b8 platform_message_pump(
     platform_state* plat_state);
 
 void* platform_allocate(
