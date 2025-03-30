@@ -152,6 +152,8 @@ b8 event_fire(
         }
     }
 
-    ENGINE_WARN("No listener found for event");
+    if (length == 0)
+        ENGINE_WARN("No listener found for event");
+
     return FALSE;
 }

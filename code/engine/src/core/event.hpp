@@ -34,6 +34,7 @@ enum class event_code : u16 {
     BUTTON_PRESSED = 0x04,
     BUTTON_RELEASED = 0x05,
 
+    // Mouse coordinate will be in the u16[0] = x and u16[1] = y
     MOUSE_MOVED = 0x06,
     MOUSE_WHEEL = 0x07,
 
@@ -46,6 +47,7 @@ enum class event_code : u16 {
 //        that are interested to this event. In order for the handlers to be
 //        called, they must implement the same interface so we need to spec-
 //        ify the function signature of an event handler
+//        If a handler returns TRUE no other handler consumes the event!
 typedef b8 (*PFN_event_handler)(event_code code, void* sender, void* listener_inst, event_context data);
 
 b8 event_startup();

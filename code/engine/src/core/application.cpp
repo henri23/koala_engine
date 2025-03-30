@@ -1,6 +1,7 @@
 #include "application.hpp"
 
 #include "core/event.hpp"
+#include "core/input.hpp"
 #include "core/logger.hpp"
 #include "core/memory.hpp"
 #include "game_types.hpp"
@@ -17,6 +18,10 @@ struct application_state {
 
 internal b8 is_initialized = FALSE;
 internal application_state application_state;
+
+// Forward declared event handlers. Implemented below
+b8 application_on_event(event_code code, void* sender, void* listener, event_context data);
+b8 application_on_key(event_code code, void* sender, void* listener, event_context data);
 
 b8 application_initialize(game* game_inst) {
     // TODO: Automate process of susbsytem initialization in a queue with dependency order optimization
@@ -51,6 +56,12 @@ b8 application_initialize(game* game_inst) {
         ENGINE_ERROR("Failed to start event subsystem. Already initialized!");
         return FALSE;
     }
+
+    input_startup();  // Depends on: logger, event, memory
+
+    event_register_listener(event_code::APPLICATION_QUIT, nullptr, application_on_event);
+    event_register_listener(event_code::KEY_PRESSED, nullptr, application_on_key);
+    event_register_listener(event_code::KEY_RELEASED, nullptr, application_on_key);
 
     if (!application_state.game_inst->initialize(application_state.game_inst)) {
         ENGINE_ERROR("Failed to create game");
@@ -96,8 +107,13 @@ void application_run() {
                 application_state.is_running = FALSE;
                 break;
             }
+
+            // NOTE: Input state copying should be the last thing done in a frame
+            input_update(0);
         }
     }
+
+    application_state.is_running = FALSE;
 
     application_shutdown();
 }
@@ -105,10 +121,65 @@ void application_run() {
 void application_shutdown() {
     application_state.game_inst->shutdown(application_state.game_inst);
     // Start shutting down subsystems in reverse order to the startup order
+    
+    event_unregister_listener(event_code::APPLICATION_QUIT, nullptr, application_on_event);
+    event_unregister_listener(event_code::KEY_PRESSED, nullptr, application_on_key);
+    event_unregister_listener(event_code::KEY_RELEASED, nullptr, application_on_key);
+
+    input_shutdown();
     event_shutdown();
     memory_shutdown();
     platform_shutdown(&application_state.platform_state);
     log_shutdown();
 
     ENGINE_DEBUG("Application susbsytems stopped correctly");
+}
+
+b8 application_on_event(
+    event_code code,
+    void* sender,
+    void* listener,
+    event_context data) {
+    switch (code) {
+        case event_code::APPLICATION_QUIT:
+            application_state.is_running = FALSE;
+            return TRUE;  // Stop other listeners from consuming the message
+        default:
+            // Propagate event to other listeners
+            return FALSE;
+    }
+}
+b8 application_on_key(
+    event_code code,
+    void* sender,
+    void* listener,
+    event_context data) {
+    switch (code) {
+        case event_code::KEY_PRESSED: {
+            keyboard_key key = static_cast<keyboard_key>(data.data.u16[0]);
+            if (key == keyboard_key::ESCAPE) {
+                event_fire(
+                    event_code::APPLICATION_QUIT,
+                    nullptr,
+                    data);
+
+                return TRUE;
+
+            } else if (key == keyboard_key::A) {
+                ENGINE_INFO("Explicit key 'A' pressed");
+            } else {
+                ENGINE_INFO("Character '%c' pressed", key);
+            }
+        } break;
+        case event_code::KEY_RELEASED: {
+            keyboard_key key = static_cast<keyboard_key>(data.data.u16[0]);
+
+            if (key == keyboard_key::B)
+                ENGINE_INFO("Explicit key 'B' released");
+        } break;
+        default:
+            return FALSE;
+    }
+
+    return FALSE;
 }

@@ -1,3 +1,5 @@
+#include <xcb/xproto.h>
+
 #include "platform.hpp"
 
 #if ENGINE_PLATFORM_LINUX
@@ -6,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <xcb/xcb.h>
 #include <xcb/xcb_icccm.h>
 #include <xcb/xcb_keysyms.h>
@@ -136,37 +139,61 @@ b8 platform_message_pump(platform_state* plat_state) {
     while ((generic_event = xcb_poll_for_event(state->connection))) {
         switch (XCB_EVENT_RESPONSE_TYPE(generic_event)) {
             case XCB_EXPOSE: {
-                ENGINE_DEBUG("Expose");
             } break;
             case XCB_KEY_PRESS:
             case XCB_KEY_RELEASE: {
-                xcb_key_press_event_t* ev = reinterpret_cast<xcb_key_press_event_t*>(generic_event);
+                xcb_key_press_event_t* ev = reinterpret_cast<xcb_key_press_event_t*>(
+                    generic_event);
 
                 xcb_keysym_t key_symbol = xcb_key_symbols_get_keysym(
                     state->key_symbols,
                     ev->detail,
                     0);
 
-                if (key_symbol == XCB_NO_SYMBOL)
+                if (key_symbol == XCB_NO_SYMBOL) {
                     ENGINE_WARN("No symbol for keycode %d", ev->detail);
+                    break;
+                }
 
-                keyboard_key key_name = translate_key(key_symbol);
-
-                input_process_key(key_name, ev->response_type == XCB_KEY_PRESS);
-
-                // Map event details (code) into the internal symbol of the engine
-                // Publish event for key pressed/released
-                // TODO: Create internal enum for keys
-                // TODO Create mapper from linux codes to internal symbols
+                input_process_key(
+                    translate_key(key_symbol),
+                    ev->response_type == XCB_KEY_PRESS);
 
             } break;
             case XCB_BUTTON_PRESS:
             case XCB_BUTTON_RELEASE: {
+                xcb_button_press_event_t* ev = reinterpret_cast<xcb_button_press_event_t*>(generic_event);
+                b8 pressed = ev->response_type == XCB_BUTTON_PRESS;
+                mouse_button button = mouse_button::MAX_BUTTONS;
+
+                switch (ev->state) {
+                    case XCB_BUTTON_INDEX_1:
+                        button = mouse_button::LEFT;
+                        break;
+                    case XCB_BUTTON_INDEX_2:
+                        button = mouse_button::MIDDLE;
+                        break;
+                    case XCB_BUTTON_INDEX_3:
+                        button = mouse_button::RIGHT;
+                        break;
+                }
+
+                if (button != mouse_button::MAX_BUTTONS) {
+                    input_process_button(
+                        button,
+                        pressed);
+                }
             } break;
             case XCB_MOTION_NOTIFY: {  // Mouse movement
+                xcb_motion_notify_event_t* ev = reinterpret_cast<xcb_motion_notify_event_t*>(generic_event);
+
+                input_process_mouse_move(
+                    ev->event_x,
+                    ev->event_y);
             } break;
             case XCB_CLIENT_MESSAGE: {
-                xcb_client_message_event_t* cm = (xcb_client_message_event_t*)generic_event;
+                xcb_client_message_event_t* cm = reinterpret_cast<xcb_client_message_event_t*>(
+                    generic_event);
 
                 if (cm->data.data32[0] == state->wm_delete_protocol) {
                     quit_flagged = TRUE;
@@ -256,7 +283,9 @@ keyboard_key translate_key(xcb_keysym_t xcb_symbol) {
     switch (xcb_symbol) {
         case 0xff08:  // Backspace
             return keyboard_key::BACKSPACE;
+
         case 0xff0d:  // Enter
+        case 0xff8d:  // Enter numpad
             return keyboard_key::ENTER;
         case 0xff09:  // Tab
             return keyboard_key::TAB;
@@ -268,6 +297,11 @@ keyboard_key translate_key(xcb_keysym_t xcb_symbol) {
             return keyboard_key::LCONTROL;
         case 0xffe4:  // Control
             return keyboard_key::RCONTROL;
+
+        case 0xffe9:
+            return keyboard_key::LMETA;
+        case 0xffea:
+            return keyboard_key::RMETA;
 
         case 0xff13:  // Pause
             return keyboard_key::PAUSE;
@@ -303,7 +337,6 @@ keyboard_key translate_key(xcb_keysym_t xcb_symbol) {
         case 0xff62:  // Execute
             return keyboard_key::EXECUTE;
 
-
         case 0xff63:  // Insert
             return keyboard_key::INSERT;
         case 0xffff:  // Delete
@@ -311,35 +344,35 @@ keyboard_key translate_key(xcb_keysym_t xcb_symbol) {
         case 0xff6a:  // Help
             return keyboard_key::HELP;
 
-
-        case 0xffeb :
+        case 0xffeb:
             return keyboard_key::LWIN;
         case 0xffec:
             return keyboard_key::RWIN;
 
-
+        case 0x0030:  // 0
         case 0xffb0:  // 0
             return keyboard_key::NUMPAD0;
-        case 0xffb1:  // 1
+        case 0x0031:  // 1
             return keyboard_key::NUMPAD1;
-        case 0xffb2:  // 2
+        case 0x0032:  // 2
             return keyboard_key::NUMPAD2;
-        case 0xffb3:  // 3
+        case 0x0033:  // 3
             return keyboard_key::NUMPAD3;
-        case 0xffb4:  // 4
+        case 0x0034:  // 4
             return keyboard_key::NUMPAD4;
-        case 0xffb5:  // 5
+        case 0x0035:  // 5
             return keyboard_key::NUMPAD5;
-        case 0xffb6:  // 6
+        case 0x0036:  // 6
             return keyboard_key::NUMPAD6;
-        case 0xffb7:  // 7
+        case 0x0037:  // 7
             return keyboard_key::NUMPAD7;
-        case 0xffb8:  // 8
+        case 0x0038:  // 8
             return keyboard_key::NUMPAD8;
-        case 0xffb9:  // 9
+        case 0x0039:  // 9
             return keyboard_key::NUMPAD9;
 
         case 0x00d7:  // Multiply
+        case 0xffaa:  // Multiply numpad
             return keyboard_key::MULTIPLY;
         case 0xffab:  // Add
             return keyboard_key::ADD;
@@ -351,7 +384,6 @@ keyboard_key translate_key(xcb_keysym_t xcb_symbol) {
             return keyboard_key::DECIMAL;
         case 0xffaf:  // Divide
             return keyboard_key::DIVIDE;
-
 
         case 0xffbe:  // F1
             return keyboard_key::F1;
@@ -402,16 +434,14 @@ keyboard_key translate_key(xcb_keysym_t xcb_symbol) {
         case 0xffd5:  // F24
             return keyboard_key::F24;
 
-
         case 0xff7f:
             return keyboard_key::NUMLOCK;
         case 0xff14:
             return keyboard_key::SCROLL;
-        case 0xffbd:
+        case 0x003d:
             return keyboard_key::NUMPAD_EQUAL;
         case 0xff67:
             return keyboard_key::RMENU;
-
 
         case 0x003b:
             return keyboard_key::SEMICOLON;
@@ -427,7 +457,6 @@ keyboard_key translate_key(xcb_keysym_t xcb_symbol) {
             return keyboard_key::SLASH;
         case 0x0060:
             return keyboard_key::TILDE;
-
 
         case 0x0041:  // A
         case 0x0061:  // a

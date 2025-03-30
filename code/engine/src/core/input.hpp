@@ -2,7 +2,7 @@
 
 #include "defines.hpp"
 
-enum class mouse_button {
+enum class mouse_button : u16 {
     LEFT,
     RIGHT,
     MIDDLE,
@@ -13,7 +13,7 @@ enum class mouse_button {
 // NOTE:  Linux uses 16 bits for key symbols. Defined in keysymdef.h inside X11library
 //        The internal codes will be defined the same as the windows keys so at least
 //        we get one mapping less because in windows they will be the same
-enum class keyboard_key : u8 {
+enum class keyboard_key : u16 {
     UNKNOWN = 0x00,
 
     BACKSPACE = 0x08,
@@ -146,6 +146,9 @@ enum class keyboard_key : u8 {
     SLASH = 0xBF,
     TILDE = 0xC0,
 
+    LMETA = 0xC1,
+    RMETA = 0xC2,
+
     MAX_KEYS
 };
 
@@ -164,10 +167,11 @@ KOALA_API b8 input_is_button_down(mouse_button button);
 KOALA_API b8 input_is_button_up(mouse_button button);
 KOALA_API b8 input_was_button_down(mouse_button button);
 KOALA_API b8 input_was_button_up(mouse_button button);
-KOALA_API void input_get_current_mouse_position(s32 x, s32 y);
-KOALA_API void input_get_previous_mouse_position(s32 x, s32 y);
+// Need to pass pointer because we need to return 2 values
+KOALA_API void input_get_current_mouse_position(s32* x, s32* y);
+KOALA_API void input_get_previous_mouse_position(s32* x, s32* y);
 
 void input_process_button(mouse_button button, b8 pressed);
 void input_process_mouse_move(s16 x, s16 y);
-void input_process_mouse_move(s8 z_delta);
+void input_process_mouse_wheel_move(s8 z_delta);
 
