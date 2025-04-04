@@ -1,6 +1,6 @@
 # Koala Game Engine
 
-<img src="images/koala_engine_logo.png?raw=true" alt="Koala Engine" height=100/>
+<img src="images/koala_engine_logo.png?raw=true" alt="Kohi Logo" height=100/>
 
 This work represents a novel atempt at creating a 3D game engine developed in C++ (mostly C style C++). The engine does not use external third-party libraries and seeks to have as little overhead as possible, i. e. polymorphism, classes and inheritance, smart pointers etc. 
 
