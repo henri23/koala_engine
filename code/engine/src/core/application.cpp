@@ -20,8 +20,17 @@ internal b8 is_initialized = FALSE;
 internal application_state application_state;
 
 // Forward declared event handlers. Implemented below
-b8 application_on_event(event_code code, void* sender, void* listener, event_context data);
-b8 application_on_key(event_code code, void* sender, void* listener, event_context data);
+b8 application_on_event(
+    event_code code,
+    void* sender,
+    void* listener,
+    event_context data);
+
+b8 application_on_key(
+    event_code code,
+    void* sender,
+    void* listener,
+    event_context data);
 
 b8 application_initialize(game* game_inst) {
     // TODO: Automate process of susbsytem initialization in a queue with dependency order optimization
@@ -59,9 +68,20 @@ b8 application_initialize(game* game_inst) {
 
     input_startup();  // Depends on: logger, event, memory
 
-    event_register_listener(event_code::APPLICATION_QUIT, nullptr, application_on_event);
-    event_register_listener(event_code::KEY_PRESSED, nullptr, application_on_key);
-    event_register_listener(event_code::KEY_RELEASED, nullptr, application_on_key);
+    event_register_listener(
+        event_code::APPLICATION_QUIT,
+        nullptr,
+        application_on_event);
+
+    event_register_listener(
+        event_code::KEY_PRESSED,
+        nullptr,
+        application_on_key);
+
+    event_register_listener(
+        event_code::KEY_RELEASED,
+        nullptr,
+        application_on_key);
 
     if (!application_state.game_inst->initialize(application_state.game_inst)) {
         ENGINE_ERROR("Failed to create game");
@@ -96,13 +116,17 @@ void application_run() {
 
         // Frame
         if (!application_state.is_suspended) {
-            if (!application_state.game_inst->update(application_state.game_inst, 0.0f)) {
+            if (!application_state.game_inst->update(
+                    application_state.game_inst,
+                    0.0f)) {
                 ENGINE_FATAL("Game update failed. Aborting");
                 application_state.is_running = FALSE;
                 break;
             }
 
-            if (!application_state.game_inst->render(application_state.game_inst, 0.0f)) {
+            if (!application_state.game_inst->render(
+                    application_state.game_inst,
+                    0.0f)) {
                 ENGINE_FATAL("Game render failed. Aborting");
                 application_state.is_running = FALSE;
                 break;
@@ -121,10 +145,21 @@ void application_run() {
 void application_shutdown() {
     application_state.game_inst->shutdown(application_state.game_inst);
     // Start shutting down subsystems in reverse order to the startup order
-    
-    event_unregister_listener(event_code::APPLICATION_QUIT, nullptr, application_on_event);
-    event_unregister_listener(event_code::KEY_PRESSED, nullptr, application_on_key);
-    event_unregister_listener(event_code::KEY_RELEASED, nullptr, application_on_key);
+
+    event_unregister_listener(
+        event_code::APPLICATION_QUIT,
+        nullptr,
+        application_on_event);
+
+    event_unregister_listener(
+        event_code::KEY_PRESSED,
+        nullptr,
+        application_on_key);
+
+    event_unregister_listener(
+        event_code::KEY_RELEASED,
+        nullptr,
+        application_on_key);
 
     input_shutdown();
     event_shutdown();
@@ -149,6 +184,7 @@ b8 application_on_event(
             return FALSE;
     }
 }
+
 b8 application_on_key(
     event_code code,
     void* sender,
@@ -157,6 +193,8 @@ b8 application_on_key(
     switch (code) {
         case event_code::KEY_PRESSED: {
             keyboard_key key = static_cast<keyboard_key>(data.data.u16[0]);
+            u16 modifiers = data.data.u16[1];
+
             if (key == keyboard_key::ESCAPE) {
                 event_fire(
                     event_code::APPLICATION_QUIT,
@@ -168,7 +206,7 @@ b8 application_on_key(
             } else if (key == keyboard_key::A) {
                 ENGINE_INFO("Explicit key 'A' pressed");
             } else {
-                ENGINE_INFO("Character '%c' pressed", key);
+                ENGINE_INFO("Character '%c' pressed ", key);
             }
         } break;
         case event_code::KEY_RELEASED: {

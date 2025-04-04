@@ -33,8 +33,8 @@ enum class keyboard_key : u16 {
     MODECHANGE = 0x1F,
 
     SPACE = 0x20,
-    PRIOR = 0x21, // Pageup
-    NEXT = 0x22, //Pagedown
+    PRIOR = 0x21,  // Pageup
+    NEXT = 0x22,   // Pagedown
     END = 0x23,
     HOME = 0x24,
     LEFT = 0x25,
@@ -152,26 +152,48 @@ enum class keyboard_key : u16 {
     MAX_KEYS
 };
 
+// Applying a bitwise and with these enum entries will yield whether a 
+// modifier was being pressed when the key event was published
+enum key_modifiers {
+    KEY_MODIFIER_MASK_SHIFT = 1,
+    KEY_MODIFIER_MASK_LOCK = 2,
+    KEY_MODIFIER_MASK_CONTROL = 4,
+    KEY_MODIFIER_MASK_ALT = 8,
+    KEY_MODIFIER_MASK_SUPER = 64
+};
+
+// Functions called by the application layer to initialize the input subsystem
 void input_startup();
 void input_shutdown();
 void input_update(f64 delta_time);
 
+// NOTE: Functions to set the state (Called by platform layer)
+void input_process_key(
+    keyboard_key key,
+    u16 modifier_mask,
+    b8 pressed);
+
+void input_process_button(
+    mouse_button button,
+    b8 pressed);
+
+void input_process_mouse_move(
+    s16 x,
+    s16 y);
+
+void input_process_mouse_wheel_move(s8 z_delta);
+
+// NOTE: Functions to query the input state
 KOALA_API b8 input_is_key_down(keyboard_key key);
 KOALA_API b8 input_is_key_up(keyboard_key key);
 KOALA_API b8 input_was_key_down(keyboard_key key);
 KOALA_API b8 input_was_key_up(keyboard_key key);
 
-void input_process_key(keyboard_key key, b8 pressed);
-
 KOALA_API b8 input_is_button_down(mouse_button button);
 KOALA_API b8 input_is_button_up(mouse_button button);
 KOALA_API b8 input_was_button_down(mouse_button button);
 KOALA_API b8 input_was_button_up(mouse_button button);
+
 // Need to pass pointer because we need to return 2 values
 KOALA_API void input_get_current_mouse_position(s32* x, s32* y);
 KOALA_API void input_get_previous_mouse_position(s32* x, s32* y);
-
-void input_process_button(mouse_button button, b8 pressed);
-void input_process_mouse_move(s16 x, s16 y);
-void input_process_mouse_wheel_move(s8 z_delta);
-

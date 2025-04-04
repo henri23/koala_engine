@@ -28,6 +28,7 @@ enum class event_code : u16 {
     APPLICATION_QUIT = 0x01,
 
     // Key code will be contained in u16[0] since keycodes are expressed in u16
+    // Key modifies will be contained in u16[1] and will be a masked value like the xcb specifies
     KEY_PRESSED = 0x02,
     KEY_RELEASED = 0x03,
 

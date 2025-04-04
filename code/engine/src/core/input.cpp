@@ -77,12 +77,16 @@ b8 input_was_key_up(keyboard_key key) {
     return state.keyboard_previous.keys[(u16)key] == FALSE;
 }
 
-void input_process_key(keyboard_key key, b8 pressed) {
+void input_process_key(
+    keyboard_key key,
+    u16 modifier_mask,
+    b8 pressed) {
     if (state.keyboard_current.keys[(u16)key] != pressed) {
         state.keyboard_current.keys[(u16)key] = pressed;
 
         event_context context;
         context.data.u16[0] = static_cast<u16>(key);
+        context.data.u16[1] = modifier_mask;
 
         event_fire(
             pressed
@@ -139,11 +143,12 @@ void input_get_previous_mouse_position(s32* x, s32* y) {
     *y = state.mouse_previous.y;
 }
 
-void input_process_button(mouse_button button, b8 pressed) {
+void input_process_button(
+    mouse_button button,
+    b8 pressed) {
     if (state.mouse_current.buttons[(u16)button] != pressed) {
         state.mouse_current.buttons[(u16)button] = pressed;
-
-        ENGINE_DEBUG("Pressed button %d", button);
+        // ENGINE_DEBUG("Pressed button %d", button);
 
         event_context context;
         context.data.u16[0] = static_cast<u16>(button);
@@ -180,6 +185,7 @@ void input_process_mouse_wheel_move(s8 z_delta) {
 
     event_context event;
     event.data.u8[0] = z_delta;
+
     event_fire(
         event_code::MOUSE_WHEEL,
         nullptr,

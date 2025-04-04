@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <xcb/xcb.h>
 #include <xcb/xcb_icccm.h>
 #include <xcb/xcb_keysyms.h>
@@ -155,8 +154,28 @@ b8 platform_message_pump(platform_state* plat_state) {
                     break;
                 }
 
+                // Extract modifiers
+                u16 modifiers = ev->state;
+
+                b8 shift_pressed = (modifiers & XCB_MOD_MASK_SHIFT);
+                b8 ctrl_pressed = (modifiers & XCB_MOD_MASK_CONTROL) >> 2;
+
+                // Not used modifiers
+                // bool alt_pressed = modifiers & XCB_MOD_MASK_1;
+                // bool super_pressed = modifiers & XCB_MOD_MASK_4;
+
+                keyboard_key key = translate_key(key_symbol);
+
+                // Treat control not as key but as a modifier only
+                if (key == keyboard_key::LCONTROL ||
+                    key == keyboard_key::RCONTROL) {
+                    break;
+                }
+
+                // TODO: Define a standard for the key modifiers
                 input_process_key(
-                    translate_key(key_symbol),
+                    key,
+                    modifiers,
                     ev->response_type == XCB_KEY_PRESS);
 
             } break;
@@ -166,15 +185,22 @@ b8 platform_message_pump(platform_state* plat_state) {
                 b8 pressed = ev->response_type == XCB_BUTTON_PRESS;
                 mouse_button button = mouse_button::MAX_BUTTONS;
 
-                switch (ev->state) {
+                switch (ev->detail) {
                     case XCB_BUTTON_INDEX_1:
                         button = mouse_button::LEFT;
                         break;
                     case XCB_BUTTON_INDEX_2:
-                        button = mouse_button::MIDDLE;
+                        button = mouse_button::RIGHT;
                         break;
                     case XCB_BUTTON_INDEX_3:
-                        button = mouse_button::RIGHT;
+                        button = mouse_button::MIDDLE;
+                        break;
+
+                    case XCB_BUTTON_INDEX_4:
+                        ENGINE_DEBUG("Scroll up");
+                        break;
+                    case XCB_BUTTON_INDEX_5:
+                        ENGINE_DEBUG("Scroll down");
                         break;
                 }
 
