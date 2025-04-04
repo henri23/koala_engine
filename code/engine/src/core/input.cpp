@@ -185,6 +185,7 @@ void input_process_mouse_wheel_move(s8 z_delta) {
 
     event_context event;
     event.data.u8[0] = z_delta;
+    // ENGINE_DEBUG("Scroll %s", z_delta == 1 ? "up" : "down");
 
     event_fire(
         event_code::MOUSE_WHEEL,

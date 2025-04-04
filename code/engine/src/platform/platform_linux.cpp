@@ -195,13 +195,15 @@ b8 platform_message_pump(platform_state* plat_state) {
                     case XCB_BUTTON_INDEX_3:
                         button = mouse_button::MIDDLE;
                         break;
-
                     case XCB_BUTTON_INDEX_4:
-                        ENGINE_DEBUG("Scroll up");
+                    case XCB_BUTTON_INDEX_5: {
+                        if (pressed)
+                            input_process_mouse_wheel_move(
+                                ev->detail == XCB_BUTTON_INDEX_4
+                                    ? 1
+                                    : -1);
                         break;
-                    case XCB_BUTTON_INDEX_5:
-                        ENGINE_DEBUG("Scroll down");
-                        break;
+                    }
                 }
 
                 if (button != mouse_button::MAX_BUTTONS) {
