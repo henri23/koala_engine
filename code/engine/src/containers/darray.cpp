@@ -5,32 +5,32 @@
 
 void* _darray_create(u64 capacity, u64 stride) {
     u64 array_length = capacity * stride;
-    array_length += (u64)darray_header::FIELDS_MAX_COUNT * sizeof(u64);  // Need to consider also the header when allocating memory for the array
+    array_length += (u64)Darray_Header::FIELDS_MAX_COUNT * sizeof(u64);  // Need to consider also the header when allocating memory for the array
     u64* header = static_cast<u64*>(
         memory_allocate(
             array_length,
-            memory_tag::DARRAY));
+            Memory_Tag::DARRAY));
 
-    header[(u64)darray_header::CAPACITY] = capacity;
-    header[(u64)darray_header::LENGTH] = 0;
-    header[(u64)darray_header::STRIDE] = stride;
-    return static_cast<void*>(header + (u64)darray_header::FIELDS_MAX_COUNT);  // Return the pointer pointing to the 0 element of the array
+    header[(u64)Darray_Header::CAPACITY] = capacity;
+    header[(u64)Darray_Header::LENGTH] = 0;
+    header[(u64)Darray_Header::STRIDE] = stride;
+    return static_cast<void*>(header + (u64)Darray_Header::FIELDS_MAX_COUNT);  // Return the pointer pointing to the 0 element of the array
 }
 
 void darray_destroy(void* array) {
-    u64* header = static_cast<u64*>(array) - (u64)darray_header::FIELDS_MAX_COUNT;  // Move back to the start of the header
-    u64 array_size = header[(u64)darray_header::CAPACITY] * header[(u64)darray_header::STRIDE];
-    u64 memory_size = array_size + (u64)darray_header::FIELDS_MAX_COUNT * sizeof(u64);
-    memory_deallocate(header, memory_size, memory_tag::DARRAY);
+    u64* header = static_cast<u64*>(array) - (u64)Darray_Header::FIELDS_MAX_COUNT;  // Move back to the start of the header
+    u64 array_size = header[(u64)Darray_Header::CAPACITY] * header[(u64)Darray_Header::STRIDE];
+    u64 memory_size = array_size + (u64)Darray_Header::FIELDS_MAX_COUNT * sizeof(u64);
+    memory_deallocate(header, memory_size, Memory_Tag::DARRAY);
 }
 
-u64 _darray_field_get(void* array, darray_header field) {
-    u64* header = static_cast<u64*>(array) - static_cast<u64>(darray_header::FIELDS_MAX_COUNT);
+u64 _darray_field_get(void* array, Darray_Header field) {
+    u64* header = static_cast<u64*>(array) - static_cast<u64>(Darray_Header::FIELDS_MAX_COUNT);
     return header[(u64)field];
 }
 
-void _darray_field_set(void* array, darray_header field, u64 value) {
-    u64* header = static_cast<u64*>(array) - static_cast<u64>(darray_header::FIELDS_MAX_COUNT);
+void _darray_field_set(void* array, Darray_Header field, u64 value) {
+    u64* header = static_cast<u64*>(array) - static_cast<u64>(Darray_Header::FIELDS_MAX_COUNT);
     header[(u64)field] = value;
 }
 
@@ -45,7 +45,7 @@ void* _darray_resize(void* array) {
 
     memory_copy(new_array, array, stride * length);
 
-    _darray_field_set(new_array, darray_header::LENGTH, length);
+    _darray_field_set(new_array, Darray_Header::LENGTH, length);
     darray_destroy(array);
 
     return new_array;
@@ -65,7 +65,7 @@ void* _darray_push(void* array, const void* value_ptr) {
     u8* addr = static_cast<u8*>(array);
     addr += length * stride;
     memory_copy(addr, value_ptr, stride);
-    _darray_field_set(array, darray_header::LENGTH, length + 1);
+    _darray_field_set(array, Darray_Header::LENGTH, length + 1);
     return array;
 }
 
@@ -75,7 +75,7 @@ void darray_pop(void* array, void* dest) {
 
     u8* index = static_cast<u8*>(array) + (length - 1) * stride;
     memory_copy(dest, index, stride);
-    _darray_field_set(array, darray_header::LENGTH, length - 1);
+    _darray_field_set(array, Darray_Header::LENGTH, length - 1);
 }
 
 void* _darray_insert_at(void* array, u32 index, const void* value_ptr) {
@@ -107,7 +107,7 @@ void* _darray_insert_at(void* array, u32 index, const void* value_ptr) {
         value_ptr,
         stride);
 
-    _darray_field_set(array, darray_header::LENGTH, length + 1);
+    _darray_field_set(array, Darray_Header::LENGTH, length + 1);
     return array;
 }
 
@@ -133,5 +133,5 @@ void darray_pop_at(void* array, u32 index, void* dest) {
             (address + (index + 1) * stride),
             (length - index - 1) * stride);
 
-    _darray_field_set(array, darray_header::LENGTH, length - 1);
+    _darray_field_set(array, Darray_Header::LENGTH, length - 1);
 }

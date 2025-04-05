@@ -22,7 +22,7 @@
 #include <unistd.h>
 #endif
 
-struct internal_state {
+struct Internal_State {
     xcb_connection_t* connection;
     int screen_number;
     xcb_screen_t* screen;
@@ -33,18 +33,18 @@ struct internal_state {
     xcb_key_symbols_t* key_symbols;
 };
 
-keyboard_key translate_key(xcb_keysym_t xcb_symbol);
+Keyboard_Key translate_key(xcb_keysym_t xcb_symbol);
 
 b8 platform_startup(
-    platform_state* plat_state,
+    Platform_State* plat_state,
     const char* application_name,
     s32 x,
     s32 y,
     s32 width,
     s32 height) {
     // Allocate and cold cast the internal state pointer to the application state
-    plat_state->internal_state = malloc(sizeof(internal_state));
-    internal_state* state = static_cast<internal_state*>(plat_state->internal_state);
+    plat_state->internal_state = malloc(sizeof(Internal_State));
+    Internal_State* state = static_cast<Internal_State*>(plat_state->internal_state);
 
     // Establish xcb connection with the preferred (current) screen
     state->connection = xcb_connect(nullptr, &state->screen_number);
@@ -128,8 +128,8 @@ b8 platform_startup(
     return TRUE;
 }
 
-b8 platform_message_pump(platform_state* plat_state) {
-    internal_state* state = static_cast<internal_state*>(plat_state->internal_state);
+b8 platform_message_pump(Platform_State* plat_state) {
+    Internal_State* state = static_cast<Internal_State*>(plat_state->internal_state);
 
     xcb_generic_event_t* generic_event;
 
@@ -164,11 +164,11 @@ b8 platform_message_pump(platform_state* plat_state) {
                 // bool alt_pressed = modifiers & XCB_MOD_MASK_1;
                 // bool super_pressed = modifiers & XCB_MOD_MASK_4;
 
-                keyboard_key key = translate_key(key_symbol);
+                Keyboard_Key key = translate_key(key_symbol);
 
                 // Treat control not as key but as a modifier only
-                if (key == keyboard_key::LCONTROL ||
-                    key == keyboard_key::RCONTROL) {
+                if (key == Keyboard_Key::LCONTROL ||
+                    key == Keyboard_Key::RCONTROL) {
                     break;
                 }
 
@@ -183,17 +183,17 @@ b8 platform_message_pump(platform_state* plat_state) {
             case XCB_BUTTON_RELEASE: {
                 xcb_button_press_event_t* ev = reinterpret_cast<xcb_button_press_event_t*>(generic_event);
                 b8 pressed = ev->response_type == XCB_BUTTON_PRESS;
-                mouse_button button = mouse_button::MAX_BUTTONS;
+                Mouse_Button button = Mouse_Button::MAX_BUTTONS;
 
                 switch (ev->detail) {
                     case XCB_BUTTON_INDEX_1:
-                        button = mouse_button::LEFT;
+                        button = Mouse_Button::LEFT;
                         break;
                     case XCB_BUTTON_INDEX_2:
-                        button = mouse_button::RIGHT;
+                        button = Mouse_Button::RIGHT;
                         break;
                     case XCB_BUTTON_INDEX_3:
-                        button = mouse_button::MIDDLE;
+                        button = Mouse_Button::MIDDLE;
                         break;
                     case XCB_BUTTON_INDEX_4:
                     case XCB_BUTTON_INDEX_5: {
@@ -206,7 +206,7 @@ b8 platform_message_pump(platform_state* plat_state) {
                     }
                 }
 
-                if (button != mouse_button::MAX_BUTTONS) {
+                if (button != Mouse_Button::MAX_BUTTONS) {
                     input_process_button(
                         button,
                         pressed);
@@ -240,8 +240,8 @@ b8 platform_message_pump(platform_state* plat_state) {
     return !quit_flagged;
 }
 
-void platform_shutdown(platform_state* plat_state) {
-    internal_state* state = static_cast<internal_state*>(plat_state->internal_state);
+void platform_shutdown(Platform_State* plat_state) {
+    Internal_State* state = static_cast<Internal_State*>(plat_state->internal_state);
 
     xcb_key_symbols_free(state->key_symbols);
     xcb_destroy_window(state->connection, state->window_id);
@@ -286,13 +286,16 @@ void platform_console_write_error(const char* message, u8 colour) {
     printf("\033[%sm%s\033[0m", colour_strings[colour], message);
 }
 
-f64 platform_get_absolute_time() {
+// Clock is returned in seconds unit
+f64 platform_get_absolute_time() { 
     struct timespec now;
+    // Clock monotonic is more robust compared to CLOCK_REALTIME
+    // REALTIME will be impacted by changes in the system
     clock_gettime(CLOCK_MONOTONIC, &now);
     return now.tv_sec + now.tv_nsec * 0.000000001;
 }
 
-void platform_sleep(u64 ms) {
+void platform_sleep(u64 ms) { // in milliseconds
 #if _POSIC_X_SOURCE >= 199309L
     struct timespec ts;
     ts.tv_sec = ms / 1000;
@@ -307,266 +310,266 @@ void platform_sleep(u64 ms) {
 }
 
 // Definitons taken from <X11/keysymdef.h> from LATIN1 section
-keyboard_key translate_key(xcb_keysym_t xcb_symbol) {
+Keyboard_Key translate_key(xcb_keysym_t xcb_symbol) {
     switch (xcb_symbol) {
         case 0xff08:  // Backspace
-            return keyboard_key::BACKSPACE;
+            return Keyboard_Key::BACKSPACE;
 
         case 0xff0d:  // Enter
         case 0xff8d:  // Enter numpad
-            return keyboard_key::ENTER;
+            return Keyboard_Key::ENTER;
         case 0xff09:  // Tab
-            return keyboard_key::TAB;
+            return Keyboard_Key::TAB;
         case 0xffe1:
-            return keyboard_key::LSHIFT;
+            return Keyboard_Key::LSHIFT;
         case 0xffe2:  // Shift
-            return keyboard_key::RSHIFT;
+            return Keyboard_Key::RSHIFT;
         case 0xffe3:
-            return keyboard_key::LCONTROL;
+            return Keyboard_Key::LCONTROL;
         case 0xffe4:  // Control
-            return keyboard_key::RCONTROL;
+            return Keyboard_Key::RCONTROL;
 
         case 0xffe9:
-            return keyboard_key::LMETA;
+            return Keyboard_Key::LMETA;
         case 0xffea:
-            return keyboard_key::RMETA;
+            return Keyboard_Key::RMETA;
 
         case 0xff13:  // Pause
-            return keyboard_key::PAUSE;
+            return Keyboard_Key::PAUSE;
         case 0xffe5:  // Caps Lock
-            return keyboard_key::CAPS_LOCK;
+            return Keyboard_Key::CAPS_LOCK;
         case 0xff1b:  // Escape
-            return keyboard_key::ESCAPE;
+            return Keyboard_Key::ESCAPE;
         case 0xff7e:  // Mode Change
-            return keyboard_key::MODECHANGE;
+            return Keyboard_Key::MODECHANGE;
 
         case 0x0020:  // Space
-            return keyboard_key::SPACE;
+            return Keyboard_Key::SPACE;
         case 0xff55:  // Page Up (Prior)
-            return keyboard_key::PRIOR;
+            return Keyboard_Key::PRIOR;
         case 0xff56:  // Page Down (Next)
-            return keyboard_key::NEXT;
+            return Keyboard_Key::NEXT;
         case 0xff57:  // End
-            return keyboard_key::END;
+            return Keyboard_Key::END;
         case 0xff50:  // Home
-            return keyboard_key::HOME;
+            return Keyboard_Key::HOME;
         case 0xff51:  // Left Arrow
-            return keyboard_key::LEFT;
+            return Keyboard_Key::LEFT;
         case 0xff52:  // Up Arrow
-            return keyboard_key::UP;
+            return Keyboard_Key::UP;
         case 0xff53:  // Right Arrow
-            return keyboard_key::RIGHT;
+            return Keyboard_Key::RIGHT;
         case 0xff54:  // Down Arrow
-            return keyboard_key::DOWN;
+            return Keyboard_Key::DOWN;
         case 0xff60:  // Select
-            return keyboard_key::SELECT;
+            return Keyboard_Key::SELECT;
         case 0xff61:  // Print
-            return keyboard_key::PRINT;
+            return Keyboard_Key::PRINT;
         case 0xff62:  // Execute
-            return keyboard_key::EXECUTE;
+            return Keyboard_Key::EXECUTE;
 
         case 0xff63:  // Insert
-            return keyboard_key::INSERT;
+            return Keyboard_Key::INSERT;
         case 0xffff:  // Delete
-            return keyboard_key::DELETE;
+            return Keyboard_Key::DELETE;
         case 0xff6a:  // Help
-            return keyboard_key::HELP;
+            return Keyboard_Key::HELP;
 
         case 0xffeb:
-            return keyboard_key::LWIN;
+            return Keyboard_Key::LWIN;
         case 0xffec:
-            return keyboard_key::RWIN;
+            return Keyboard_Key::RWIN;
 
         case 0x0030:  // 0
         case 0xffb0:  // 0
-            return keyboard_key::NUMPAD0;
+            return Keyboard_Key::NUMPAD0;
         case 0x0031:  // 1
-            return keyboard_key::NUMPAD1;
+            return Keyboard_Key::NUMPAD1;
         case 0x0032:  // 2
-            return keyboard_key::NUMPAD2;
+            return Keyboard_Key::NUMPAD2;
         case 0x0033:  // 3
-            return keyboard_key::NUMPAD3;
+            return Keyboard_Key::NUMPAD3;
         case 0x0034:  // 4
-            return keyboard_key::NUMPAD4;
+            return Keyboard_Key::NUMPAD4;
         case 0x0035:  // 5
-            return keyboard_key::NUMPAD5;
+            return Keyboard_Key::NUMPAD5;
         case 0x0036:  // 6
-            return keyboard_key::NUMPAD6;
+            return Keyboard_Key::NUMPAD6;
         case 0x0037:  // 7
-            return keyboard_key::NUMPAD7;
+            return Keyboard_Key::NUMPAD7;
         case 0x0038:  // 8
-            return keyboard_key::NUMPAD8;
+            return Keyboard_Key::NUMPAD8;
         case 0x0039:  // 9
-            return keyboard_key::NUMPAD9;
+            return Keyboard_Key::NUMPAD9;
 
         case 0x00d7:  // Multiply
         case 0xffaa:  // Multiply numpad
-            return keyboard_key::MULTIPLY;
+            return Keyboard_Key::MULTIPLY;
         case 0xffab:  // Add
-            return keyboard_key::ADD;
+            return Keyboard_Key::ADD;
         case 0xffac:
-            return keyboard_key::SEPARATOR;
+            return Keyboard_Key::SEPARATOR;
         case 0xffad:  // Subtract
-            return keyboard_key::SUBTRACT;
+            return Keyboard_Key::SUBTRACT;
         case 0xffae:  // Decimal
-            return keyboard_key::DECIMAL;
+            return Keyboard_Key::DECIMAL;
         case 0xffaf:  // Divide
-            return keyboard_key::DIVIDE;
+            return Keyboard_Key::DIVIDE;
 
         case 0xffbe:  // F1
-            return keyboard_key::F1;
+            return Keyboard_Key::F1;
         case 0xffbf:  // F2
-            return keyboard_key::F2;
+            return Keyboard_Key::F2;
         case 0xffc0:  // F3
-            return keyboard_key::F3;
+            return Keyboard_Key::F3;
         case 0xffc1:  // F4
-            return keyboard_key::F4;
+            return Keyboard_Key::F4;
         case 0xffc2:  // F5
-            return keyboard_key::F5;
+            return Keyboard_Key::F5;
         case 0xffc3:  // F6
-            return keyboard_key::F6;
+            return Keyboard_Key::F6;
         case 0xffc4:  // F7
-            return keyboard_key::F7;
+            return Keyboard_Key::F7;
         case 0xffc5:  // F8
-            return keyboard_key::F8;
+            return Keyboard_Key::F8;
         case 0xffc6:  // F9
-            return keyboard_key::F9;
+            return Keyboard_Key::F9;
         case 0xffc7:  // F10
-            return keyboard_key::F10;
+            return Keyboard_Key::F10;
         case 0xffc8:  // F11
-            return keyboard_key::F11;
+            return Keyboard_Key::F11;
         case 0xffc9:  // F12
-            return keyboard_key::F12;
+            return Keyboard_Key::F12;
         case 0xffca:  // F13
-            return keyboard_key::F13;
+            return Keyboard_Key::F13;
         case 0xffcb:  // F14
-            return keyboard_key::F14;
+            return Keyboard_Key::F14;
         case 0xffcc:  // F15
-            return keyboard_key::F15;
+            return Keyboard_Key::F15;
         case 0xffcd:  // F16
-            return keyboard_key::F16;
+            return Keyboard_Key::F16;
         case 0xffce:  // F17
-            return keyboard_key::F17;
+            return Keyboard_Key::F17;
         case 0xffcf:  // F18
-            return keyboard_key::F18;
+            return Keyboard_Key::F18;
         case 0xffd0:  // F19
-            return keyboard_key::F19;
+            return Keyboard_Key::F19;
         case 0xffd1:  // F20
-            return keyboard_key::F20;
+            return Keyboard_Key::F20;
         case 0xffd2:  // F21
-            return keyboard_key::F21;
+            return Keyboard_Key::F21;
         case 0xffd3:  // F22
-            return keyboard_key::F22;
+            return Keyboard_Key::F22;
         case 0xffd4:  // F23
-            return keyboard_key::F23;
+            return Keyboard_Key::F23;
         case 0xffd5:  // F24
-            return keyboard_key::F24;
+            return Keyboard_Key::F24;
 
         case 0xff7f:
-            return keyboard_key::NUMLOCK;
+            return Keyboard_Key::NUMLOCK;
         case 0xff14:
-            return keyboard_key::SCROLL;
+            return Keyboard_Key::SCROLL;
         case 0x003d:
-            return keyboard_key::NUMPAD_EQUAL;
+            return Keyboard_Key::NUMPAD_EQUAL;
         case 0xff67:
-            return keyboard_key::RMENU;
+            return Keyboard_Key::RMENU;
 
         case 0x003b:
-            return keyboard_key::SEMICOLON;
+            return Keyboard_Key::SEMICOLON;
         case 0x002b:
-            return keyboard_key::PLUS;
+            return Keyboard_Key::PLUS;
         case 0x002c:
-            return keyboard_key::COMMA;
+            return Keyboard_Key::COMMA;
         case 0x002d:
-            return keyboard_key::MINUS;
+            return Keyboard_Key::MINUS;
         case 0x002e:
-            return keyboard_key::PERIOD;
+            return Keyboard_Key::PERIOD;
         case 0x002f:
-            return keyboard_key::SLASH;
+            return Keyboard_Key::SLASH;
         case 0x0060:
-            return keyboard_key::TILDE;
+            return Keyboard_Key::TILDE;
 
         case 0x0041:  // A
         case 0x0061:  // a
-            return keyboard_key::A;
+            return Keyboard_Key::A;
         case 0x0042:  // B
         case 0x0062:  // b
-            return keyboard_key::B;
+            return Keyboard_Key::B;
         case 0x0043:  // C
         case 0x0063:  // c
-            return keyboard_key::C;
+            return Keyboard_Key::C;
         case 0x0044:  // D
         case 0x0064:  // d
-            return keyboard_key::D;
+            return Keyboard_Key::D;
         case 0x0045:  // E
         case 0x0065:  // e
-            return keyboard_key::E;
+            return Keyboard_Key::E;
         case 0x0046:  // F
         case 0x0066:  // f
-            return keyboard_key::F;
+            return Keyboard_Key::F;
         case 0x0047:  // G
         case 0x0067:  // G
-            return keyboard_key::G;
+            return Keyboard_Key::G;
         case 0x0048:  // H
         case 0x0068:  // H
-            return keyboard_key::H;
+            return Keyboard_Key::H;
         case 0x0049:  // I
         case 0x0069:  // i
-            return keyboard_key::I;
+            return Keyboard_Key::I;
         case 0x004a:  // J
         case 0x006a:  // j
-            return keyboard_key::J;
+            return Keyboard_Key::J;
         case 0x004b:  // K
         case 0x006b:  // k
-            return keyboard_key::K;
+            return Keyboard_Key::K;
         case 0x004c:  // L
         case 0x006c:  // l
-            return keyboard_key::L;
+            return Keyboard_Key::L;
         case 0x004d:  // M
         case 0x006d:  // m
-            return keyboard_key::M;
+            return Keyboard_Key::M;
         case 0x004e:  // N
         case 0x006e:  // n
-            return keyboard_key::N;
+            return Keyboard_Key::N;
         case 0x004f:  // O
         case 0x006f:  // o
-            return keyboard_key::O;
+            return Keyboard_Key::O;
         case 0x0050:  // P
         case 0x0070:  // p
-            return keyboard_key::P;
+            return Keyboard_Key::P;
         case 0x0051:  // Q
         case 0x0071:  // q
-            return keyboard_key::Q;
+            return Keyboard_Key::Q;
         case 0x0052:  // R
         case 0x0072:  // r
-            return keyboard_key::R;
+            return Keyboard_Key::R;
         case 0x0053:  // S
         case 0x0073:  // s
-            return keyboard_key::S;
+            return Keyboard_Key::S;
         case 0x0054:  // T
         case 0x0074:  // T
-            return keyboard_key::T;
+            return Keyboard_Key::T;
         case 0x0055:  // U
         case 0x0075:  // U
-            return keyboard_key::U;
+            return Keyboard_Key::U;
         case 0x0056:  // V
         case 0x0076:  // V
-            return keyboard_key::V;
+            return Keyboard_Key::V;
         case 0x0057:  // W
         case 0x0077:  // W
-            return keyboard_key::W;
+            return Keyboard_Key::W;
         case 0x0058:  // X
         case 0x0078:  // X
-            return keyboard_key::X;
+            return Keyboard_Key::X;
         case 0x0059:  // Y
         case 0x0079:  // Y
-            return keyboard_key::Y;
+            return Keyboard_Key::Y;
         case 0x005a:  // Z
         case 0x007a:  // Z
-            return keyboard_key::Z;
+            return Keyboard_Key::Z;
 
         default:
-            return keyboard_key::UNKNOWN;
+            return Keyboard_Key::UNKNOWN;
     };
 }
 

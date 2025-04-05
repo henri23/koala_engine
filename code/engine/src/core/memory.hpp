@@ -2,7 +2,7 @@
 
 #include "defines.hpp"
 
-enum class memory_tag {
+enum class Memory_Tag {
     UNKNOWN,
     DARRAY,
     EVENTS,
@@ -13,18 +13,18 @@ enum class memory_tag {
     MAX_ENTRIES
 };
 
-void memory_startup();
+void memory_initialize();
 
 void memory_shutdown();
 
 KOALA_API void* memory_allocate(
     u64 size,
-    memory_tag tag);
+    Memory_Tag tag);
 
 KOALA_API void memory_deallocate(
     void* block,
     u64 size,
-    memory_tag tag);
+    Memory_Tag tag);
 
 KOALA_API void* memory_zero(
     void* block,

@@ -3,7 +3,7 @@
 #include "defines.hpp"
 
 // NOTE: The event context size will be 16 bytes
-struct event_context {
+struct Event_Context {
     union {
         u64 u64[2];
         s64 s64[2];
@@ -24,7 +24,7 @@ struct event_context {
 };
 
 // NOTE: User application codes should start beyond 255
-enum class event_code : u16 {
+enum class Event_Code : u16 {
     APPLICATION_QUIT = 0x01,
 
     // Key code will be contained in u16[0] since keycodes are expressed in u16
@@ -49,22 +49,22 @@ enum class event_code : u16 {
 //        called, they must implement the same interface so we need to spec-
 //        ify the function signature of an event handler
 //        If a handler returns TRUE no other handler consumes the event!
-typedef b8 (*PFN_event_handler)(event_code code, void* sender, void* listener_inst, event_context data);
+typedef b8 (*PFN_Event_Handler)(Event_Code code, void* sender, void* listener_inst, Event_Context data);
 
 b8 event_startup();
 void event_shutdown();
 
 KOALA_API b8 event_register_listener(
-    event_code code,
+    Event_Code code,
     void* listener,
-    PFN_event_handler on_event);
+    PFN_Event_Handler on_event);
 
 KOALA_API b8 event_unregister_listener(
-    event_code code,
+    Event_Code code,
     void* listener,
-    PFN_event_handler on_event);
+    PFN_Event_Handler on_event);
 
 KOALA_API b8 event_fire(
-    event_code code,
+    Event_Code code,
     void* sender,
-    event_context context);
+    Event_Context context);

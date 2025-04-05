@@ -4,24 +4,24 @@
 #include "core/logger.hpp"
 #include "core/memory.hpp"
 
-struct registered_event {
+struct Registered_Event {
     void* listener;
-    PFN_event_handler callback;
+    PFN_Event_Handler callback;
 };
 
 // Entries must be dynamically allocated since we cannot predict how many listener there will be for each code
 // We can use dynamic arrays to manage the elements
-struct event_code_entry {
-    registered_event* events;
+struct Event_Code_Entry {
+    Registered_Event* events;
 };
 
 #define MAX_EVENT_ENTRIES 16384
 
-struct event_system_state {
-    event_code_entry entries[MAX_EVENT_ENTRIES];
+struct Event_System_State {
+    Event_Code_Entry entries[MAX_EVENT_ENTRIES];
 };
 
-internal event_system_state state;
+internal Event_System_State state;
 internal b8 is_initialized = FALSE;
 
 b8 event_startup() {
@@ -51,16 +51,16 @@ void event_shutdown() {
 }
 
 b8 event_register_listener(
-    event_code code,
+    Event_Code code,
     void* listener,
-    PFN_event_handler on_event) {
+    PFN_Event_Handler on_event) {
     if (is_initialized == FALSE)
         return FALSE;
 
     // Check if array is initiliazed
     if (!state.entries[(u16)code].events)
-        state.entries[(u16)code].events = static_cast<registered_event*>(
-            darray_create(registered_event));
+        state.entries[(u16)code].events = static_cast<Registered_Event*>(
+            darray_create(Registered_Event));
 
     void* events = state.entries[(u16)code].events;
 
@@ -74,7 +74,7 @@ b8 event_register_listener(
     }
 
     // No need to allocate in heap since the darray_push copies the entry
-    registered_event entry;
+    Registered_Event entry;
 
     entry.listener = listener;
     entry.callback = on_event;
@@ -82,15 +82,15 @@ b8 event_register_listener(
     darray_push(events, entry);
 
     // Since the address of the pointer could change in the push we need to reasign the pointer
-    state.entries[(u16)code].events = static_cast<registered_event*>(events);
+    state.entries[(u16)code].events = static_cast<Registered_Event*>(events);
 
     return TRUE;
 }
 
 b8 event_unregister_listener(
-    event_code code,
+    Event_Code code,
     void* listener,
-    PFN_event_handler on_event) {
+    PFN_Event_Handler on_event) {
     if (is_initialized == FALSE) {
         return FALSE;
     }
@@ -105,12 +105,12 @@ b8 event_unregister_listener(
             state.entries[(u16)code].events));
 
     for (u32 i = 0; i < length; ++i) {
-        registered_event e = state.entries[(u16)code].events[i];
+        Registered_Event e = state.entries[(u16)code].events[i];
 
         if (
             e.listener == listener &&
             e.callback == on_event) {
-            registered_event popped;
+            Registered_Event popped;
 
             darray_pop_at(
                 static_cast<void*>(
@@ -127,9 +127,9 @@ b8 event_unregister_listener(
 }
 
 b8 event_fire(
-    event_code code,
+    Event_Code code,
     void* sender,
-    event_context context) {
+    Event_Context context) {
     if (is_initialized == FALSE) {
         return FALSE;
     }
@@ -141,7 +141,7 @@ b8 event_fire(
     // Check if listener is already present
     u32 length = darray_length((void*)(state.entries[(u16)code].events));
     for (u32 i = 0; i < length; ++i) {
-        registered_event e = state.entries[(u16)code].events[i];
+        Registered_Event e = state.entries[(u16)code].events[i];
         if (e.callback(
                 code,
                 sender,

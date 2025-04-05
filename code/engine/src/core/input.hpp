@@ -2,7 +2,7 @@
 
 #include "defines.hpp"
 
-enum class mouse_button : u16 {
+enum class Mouse_Button : u16 {
     LEFT,
     RIGHT,
     MIDDLE,
@@ -13,7 +13,7 @@ enum class mouse_button : u16 {
 // NOTE:  Linux uses 16 bits for key symbols. Defined in keysymdef.h inside X11library
 //        The internal codes will be defined the same as the windows keys so at least
 //        we get one mapping less because in windows they will be the same
-enum class keyboard_key : u16 {
+enum class Keyboard_Key : u16 {
     UNKNOWN = 0x00,
 
     BACKSPACE = 0x08,
@@ -154,7 +154,7 @@ enum class keyboard_key : u16 {
 
 // Applying a bitwise and with these enum entries will yield whether a 
 // modifier was being pressed when the key event was published
-enum key_modifiers {
+enum Key_Modifiers {
     KEY_MODIFIER_MASK_SHIFT = 1,
     KEY_MODIFIER_MASK_LOCK = 2,
     KEY_MODIFIER_MASK_CONTROL = 4,
@@ -169,12 +169,12 @@ void input_update(f64 delta_time);
 
 // NOTE: Functions to set the state (Called by platform layer)
 void input_process_key(
-    keyboard_key key,
+    Keyboard_Key key,
     u16 modifier_mask,
     b8 pressed);
 
 void input_process_button(
-    mouse_button button,
+    Mouse_Button button,
     b8 pressed);
 
 void input_process_mouse_move(
@@ -184,15 +184,15 @@ void input_process_mouse_move(
 void input_process_mouse_wheel_move(s8 z_delta);
 
 // NOTE: Functions to query the input state
-KOALA_API b8 input_is_key_down(keyboard_key key);
-KOALA_API b8 input_is_key_up(keyboard_key key);
-KOALA_API b8 input_was_key_down(keyboard_key key);
-KOALA_API b8 input_was_key_up(keyboard_key key);
+KOALA_API b8 input_is_key_down(Keyboard_Key key);
+KOALA_API b8 input_is_key_up(Keyboard_Key key);
+KOALA_API b8 input_was_key_down(Keyboard_Key key);
+KOALA_API b8 input_was_key_up(Keyboard_Key key);
 
-KOALA_API b8 input_is_button_down(mouse_button button);
-KOALA_API b8 input_is_button_up(mouse_button button);
-KOALA_API b8 input_was_button_down(mouse_button button);
-KOALA_API b8 input_was_button_up(mouse_button button);
+KOALA_API b8 input_is_button_down(Mouse_Button button);
+KOALA_API b8 input_is_button_up(Mouse_Button button);
+KOALA_API b8 input_was_button_down(Mouse_Button button);
+KOALA_API b8 input_was_button_up(Mouse_Button button);
 
 // Need to pass pointer because we need to return 2 values
 KOALA_API void input_get_current_mouse_position(s32* x, s32* y);

@@ -5,11 +5,11 @@
 #include "core/logger.hpp"
 #include "game_types.hpp"
 
-extern b8 create_game(game* game_inst);
+extern b8 create_game(Game* game_inst);
 
 int main() {
 
-    game game_inst;
+    Game game_inst;
     if(!create_game(&game_inst)) {
         ENGINE_FATAL("Failed to create game");
         return -1;

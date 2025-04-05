@@ -7,14 +7,14 @@
 #include "defines.hpp"
 #include "platform/platform.hpp"
 
-struct memory_stats {
+struct Memory_Stats {
     u64 total_allocated;
-    u64 tagged_allocations[(u64)memory_tag::MAX_ENTRIES];
+    u64 tagged_allocations[(u64)Memory_Tag::MAX_ENTRIES];
 };
 
-internal memory_stats stats;
+internal Memory_Stats stats;
 
-internal const char* memory_tag_strings[(u64)memory_tag::MAX_ENTRIES] = {
+internal const char* memory_tag_strings[(u64)Memory_Tag::MAX_ENTRIES] = {
     "UNKNOWN  :",
     "DARRAY   :",
     "EVENTS   :",
@@ -23,8 +23,10 @@ internal const char* memory_tag_strings[(u64)memory_tag::MAX_ENTRIES] = {
     "INPUT    :",
 };
 
-void memory_startup() {
-    platform_zero_memory(&stats, sizeof(stats));
+void memory_initialize() {
+    // We do not zero when startup is called because the memory is available
+    // before the application is started
+    // platform_zero_memory(&stats, sizeof(stats));
     ENGINE_DEBUG("Memory subsystem initialized");
 }
 
@@ -32,8 +34,8 @@ void memory_shutdown() {
     ENGINE_DEBUG("Memory subsystem shutting down...");
 }
 
-void* memory_allocate(u64 size, memory_tag tag) {
-    if (tag == memory_tag::UNKNOWN) {
+void* memory_allocate(u64 size, Memory_Tag tag) {
+    if (tag == Memory_Tag::UNKNOWN) {
         ENGINE_WARN("The memory is being initialized as UNKNOWN. Please allocated it with the proper tag");
     }
 
@@ -48,7 +50,7 @@ void* memory_allocate(u64 size, memory_tag tag) {
     return block;
 }
 
-void memory_deallocate(void* block, u64 size, memory_tag tag) {
+void memory_deallocate(void* block, u64 size, Memory_Tag tag) {
     stats.tagged_allocations[(u64)tag] -= size;
     stats.total_allocated -= size;
 
@@ -70,10 +72,10 @@ void* memory_copy(void* destination, const void* source, u64 size) {
         return destination;
     }
 
-    // NOTE:  Since we are adding the size to the integer value of the address, the compiler must
-    //        copy 'size' bytes to the destination. When copying 'size' bytes, the address value
-    //        will be incremented by ('size' - 1). So if the max_addr coincides with min_addr + size - 1
-    //        there will be overlap.
+    // Since we are adding the size to the integer value of the address, the compiler must
+    // copy 'size' bytes to the destination. When copying 'size' bytes, the address value
+    // will be incremented by ('size' - 1). So if the max_addr coincides with min_addr + size - 1
+    // there will be overlap.
     if (source_addr > dest_addr && source_addr < dest_addr + size)
         is_overlap = TRUE;
     else if (dest_addr > source_addr && dest_addr < source_addr + size)
@@ -100,7 +102,7 @@ char* memory_get_current_usage() {
 
     u64 offset = strlen(utilization_buffer);  // The offset is represented in number of bytes
 
-    u64 max_tags = static_cast<u64>(memory_tag::MAX_ENTRIES);
+    u64 max_tags = static_cast<u64>(Memory_Tag::MAX_ENTRIES);
     for (u32 i = 0; i < max_tags; ++i) {
         char usage_unit[4] = "XiB";
         f32 amount = 1.0f;
@@ -133,7 +135,7 @@ char* memory_get_current_usage() {
     // This is because the buffer will go out of scope after we return and the value will be jibrish
     // We need one more byte for the null terminator character as the strlen disregards it
     u64 length = strlen(utilization_buffer);
-    char* copy = static_cast<char*>(memory_allocate(length + 1, memory_tag::STRING));
+    char* copy = static_cast<char*>(memory_allocate(length + 1, Memory_Tag::STRING));
     memory_copy(copy, utilization_buffer, length + 1);
 
     return copy;

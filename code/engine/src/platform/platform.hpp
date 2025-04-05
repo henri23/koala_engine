@@ -2,12 +2,12 @@
 
 #include "defines.hpp"
 
-struct platform_state {
+struct Platform_State {
     void* internal_state;
 };
 
 b8 platform_startup(
-    platform_state* plat_state,
+    Platform_State* plat_state,
     const char* application_name,
     s32 x,
     s32 y,
@@ -15,10 +15,10 @@ b8 platform_startup(
     s32 height);
 
 void platform_shutdown(
-    platform_state* plat_state);
+    Platform_State* plat_state);
 
 b8 platform_message_pump(
-    platform_state* plat_state);
+    Platform_State* plat_state);
 
 void* platform_allocate(
     u64 size,

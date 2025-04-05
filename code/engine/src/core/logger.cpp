@@ -16,7 +16,7 @@ void log_shutdown() {
     // TODO: cleanup logging/write queued entries
 }
 
-void log_output(log_scope scope, log_level level, const char* message, ...) {
+void log_output(Log_Scope scope, Log_Level level, const char* message, ...) {
     const char* level_strings[6] = {
         "[FATAL]: ",
         "[ERROR]: ",
@@ -29,7 +29,7 @@ void log_output(log_scope scope, log_level level, const char* message, ...) {
         "ENGINE | ",
         "GAME   | "};
 
-    b8 is_error = (u64)level < (u64)log_level::WARN;
+    b8 is_error = (u64)level < (u64)Log_Level::WARN;
 
     const s32 msg_length = 32000;
     char out_message[msg_length] = {};
@@ -62,8 +62,8 @@ KOALA_API void report_assertion_failure(
     const char* file,
     s32 line) {
     log_output(
-        log_scope::ASSERTS,
-        log_level::FATAL,
+        Log_Scope::ASSERTS,
+        Log_Level::FATAL,
         "Assertion failure: %s failed with message '%s', file %s, line %d\n",
         expression, message, file, line);
 }

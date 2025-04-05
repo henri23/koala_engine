@@ -1,5 +1,6 @@
 #include "application.hpp"
 
+#include "core/absolute_clock.hpp"
 #include "core/event.hpp"
 #include "core/input.hpp"
 #include "core/logger.hpp"
@@ -7,32 +8,35 @@
 #include "game_types.hpp"
 #include "platform/platform.hpp"
 
-struct application_state {
-    game* game_inst;
+#define TARGET_FRAME_TIME (f64)1.0f / 60
+
+struct Application_State {
+    Game* game_inst;
     b8 is_running;
     b8 is_suspended;
-    platform_state platform_state;
+    Platform_State platform_state;
     s16 width;
     s16 height;
+    Absolute_Clock clock;
 };
 
 internal b8 is_initialized = FALSE;
-internal application_state application_state;
+internal Application_State application_state;
 
 // Forward declared event handlers. Implemented below
 b8 application_on_event(
-    event_code code,
+    Event_Code code,
     void* sender,
     void* listener,
-    event_context data);
+    Event_Context data);
 
 b8 application_on_key(
-    event_code code,
+    Event_Code code,
     void* sender,
     void* listener,
-    event_context data);
+    Event_Context data);
 
-b8 application_initialize(game* game_inst) {
+b8 application_initialize(Game* game_inst) {
     // TODO: Automate process of susbsytem initialization in a queue with dependency order optimization
 
     // Protect the application state from being initialized multiple times
@@ -59,7 +63,7 @@ b8 application_initialize(game* game_inst) {
         return FALSE;
     }
 
-    memory_startup();  // Depends on: platform, logger
+    memory_initialize();  // Depends on: platform, logger
 
     if (!event_startup()) {
         ENGINE_ERROR("Failed to start event subsystem. Already initialized!");
@@ -69,17 +73,17 @@ b8 application_initialize(game* game_inst) {
     input_startup();  // Depends on: logger, event, memory
 
     event_register_listener(
-        event_code::APPLICATION_QUIT,
+        Event_Code::APPLICATION_QUIT,
         nullptr,
         application_on_event);
 
     event_register_listener(
-        event_code::KEY_PRESSED,
+        Event_Code::KEY_PRESSED,
         nullptr,
         application_on_key);
 
     event_register_listener(
-        event_code::KEY_RELEASED,
+        Event_Code::KEY_RELEASED,
         nullptr,
         application_on_key);
 
@@ -108,6 +112,11 @@ void application_run() {
     application_state.is_running = TRUE;
     ENGINE_DEBUG("Application loop is starting...");
 
+    absolute_clock_start(&application_state.clock);
+    absolute_clock_update(&application_state.clock);
+
+    f64 last_time = application_state.clock.elapsed_time;
+
     while (application_state.is_running) {
         // For each iteration read the new messages from the message queue
         if (!platform_message_pump(&application_state.platform_state)) {
@@ -116,9 +125,18 @@ void application_run() {
 
         // Frame
         if (!application_state.is_suspended) {
+            // To be consistent from the architecture standpoint the
+            // clock will be updates once per frame
+            absolute_clock_update(&application_state.clock);
+            f64 current_time = application_state.clock.elapsed_time;
+            f64 delta_t = current_time - last_time;  // seconds
+
+            // We need to compute the time needed to render an image
+            f64 frame_start_time = platform_get_absolute_time();
+
             if (!application_state.game_inst->update(
                     application_state.game_inst,
-                    0.0f)) {
+                    static_cast<f32>(delta_t))) {
                 ENGINE_FATAL("Game update failed. Aborting");
                 application_state.is_running = FALSE;
                 break;
@@ -126,19 +144,34 @@ void application_run() {
 
             if (!application_state.game_inst->render(
                     application_state.game_inst,
-                    0.0f)) {
+                    static_cast<f32>(delta_t))) {
                 ENGINE_FATAL("Game render failed. Aborting");
                 application_state.is_running = FALSE;
                 break;
             }
 
-            // NOTE: Input state copying should be the last thing done in a frame
-            input_update(0);
+            f64 frame_end_time = platform_get_absolute_time();
+            f64 frame_time = frame_end_time - frame_start_time;
+
+            f64 remaining_frame_seconds = TARGET_FRAME_TIME - frame_time;
+
+            if (remaining_frame_seconds > 0) {
+                b8 limit_frame = application_state.game_inst->config.limit_frame;
+                // platform_sleep(milliseconds)
+                if (limit_frame)
+                    platform_sleep((remaining_frame_seconds * 1000) - 1);
+            }
+
+            // Input state copying should be the last thing
+            input_update(delta_t);
+
+            last_time = current_time;
         }
     }
 
     application_state.is_running = FALSE;
 
+    absolute_clock_stop(&application_state.clock);
     application_shutdown();
 }
 
@@ -147,17 +180,17 @@ void application_shutdown() {
     // Start shutting down subsystems in reverse order to the startup order
 
     event_unregister_listener(
-        event_code::APPLICATION_QUIT,
+        Event_Code::APPLICATION_QUIT,
         nullptr,
         application_on_event);
 
     event_unregister_listener(
-        event_code::KEY_PRESSED,
+        Event_Code::KEY_PRESSED,
         nullptr,
         application_on_key);
 
     event_unregister_listener(
-        event_code::KEY_RELEASED,
+        Event_Code::KEY_RELEASED,
         nullptr,
         application_on_key);
 
@@ -171,12 +204,12 @@ void application_shutdown() {
 }
 
 b8 application_on_event(
-    event_code code,
+    Event_Code code,
     void* sender,
     void* listener,
-    event_context data) {
+    Event_Context data) {
     switch (code) {
-        case event_code::APPLICATION_QUIT:
+        case Event_Code::APPLICATION_QUIT:
             application_state.is_running = FALSE;
             return TRUE;  // Stop other listeners from consuming the message
         default:
@@ -186,33 +219,33 @@ b8 application_on_event(
 }
 
 b8 application_on_key(
-    event_code code,
+    Event_Code code,
     void* sender,
     void* listener,
-    event_context data) {
+    Event_Context data) {
     switch (code) {
-        case event_code::KEY_PRESSED: {
-            keyboard_key key = static_cast<keyboard_key>(data.data.u16[0]);
+        case Event_Code::KEY_PRESSED: {
+            Keyboard_Key key = static_cast<Keyboard_Key>(data.data.u16[0]);
             u16 modifiers = data.data.u16[1];
 
-            if (key == keyboard_key::ESCAPE) {
+            if (key == Keyboard_Key::ESCAPE) {
                 event_fire(
-                    event_code::APPLICATION_QUIT,
+                    Event_Code::APPLICATION_QUIT,
                     nullptr,
                     data);
 
                 return TRUE;
 
-            } else if (key == keyboard_key::A) {
+            } else if (key == Keyboard_Key::A) {
                 ENGINE_INFO("Explicit key 'A' pressed");
             } else {
                 ENGINE_INFO("Character '%c' pressed ", key);
             }
         } break;
-        case event_code::KEY_RELEASED: {
-            keyboard_key key = static_cast<keyboard_key>(data.data.u16[0]);
+        case Event_Code::KEY_RELEASED: {
+            Keyboard_Key key = static_cast<Keyboard_Key>(data.data.u16[0]);
 
-            if (key == keyboard_key::B)
+            if (key == Keyboard_Key::B)
                 ENGINE_INFO("Explicit key 'B' released");
         } break;
         default:

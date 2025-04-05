@@ -3,7 +3,7 @@
 #include "defines.hpp"
 
 // Memory lyaout : | 64 bits CAPACITY | 64 bits LENGTH | 64 bits STRIDE | void* variable size elements |
-enum class darray_header : u64 {
+enum class Darray_Header : u64 {
     CAPACITY,  // u64
     LENGTH,
     STRIDE,
@@ -21,12 +21,12 @@ KOALA_API void* _darray_create(u64 capacity, u64 stride);
 
 KOALA_API void darray_destroy(void* array);
 
-#define darray_length(array) _darray_field_get(array, darray_header::LENGTH)
-#define darray_stride(array) _darray_field_get(array, darray_header::STRIDE)
-#define darray_capacity(array) _darray_field_get(array, darray_header::CAPACITY)
-#define darray_clear(array) _darray_field_set(array, darray_header::HEADER_COUNT, 0)
-KOALA_API u64 _darray_field_get(void* array, darray_header field);
-KOALA_API void _darray_field_set(void* array, darray_header field, u64 value);
+#define darray_length(array) _darray_field_get(array, Darray_Header::LENGTH)
+#define darray_stride(array) _darray_field_get(array, Darray_Header::STRIDE)
+#define darray_capacity(array) _darray_field_get(array, Darray_Header::CAPACITY)
+#define darray_clear(array) _darray_field_set(array, Darray_Header::HEADER_COUNT, 0)
+KOALA_API u64 _darray_field_get(void* array, Darray_Header field);
+KOALA_API void _darray_field_set(void* array, Darray_Header field, u64 value);
 
 #define darray_push(array, value)           \
     {                                       \
