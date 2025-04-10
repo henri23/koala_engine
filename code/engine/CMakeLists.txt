@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 # Define project MACROS
 add_compile_definitions(KOALA_EXPORT)
+add_compile_definitions(DEBUG_BUILD)
 
 # Include all files recursivelly (header files do not need to be included)
 file(GLOB_RECURSE ENGINE_SRC "src/*.cpp")

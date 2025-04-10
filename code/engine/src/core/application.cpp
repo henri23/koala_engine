@@ -8,6 +8,9 @@
 #include "game_types.hpp"
 #include "platform/platform.hpp"
 
+#include "renderer/renderer_frontend.hpp"
+#include "renderer/renderer_types.hpp"
+
 #define TARGET_FRAME_TIME (f64)1.0f / 60
 
 struct Application_State {
@@ -59,18 +62,25 @@ b8 application_initialize(Game* game_inst) {
             game_inst->config.start_pos_x,
             game_inst->config.start_pos_y,
             game_inst->config.start_width,
-            game_inst->config.start_height)) {  // Depends on: logger
+            game_inst->config.start_height)) { // Depends on: logger
         return FALSE;
     }
 
-    memory_initialize();  // Depends on: platform, logger
+    memory_startup(); // Depends on: platform, logger
 
     if (!event_startup()) {
         ENGINE_ERROR("Failed to start event subsystem. Already initialized!");
         return FALSE;
     }
 
-    input_startup();  // Depends on: logger, event, memory
+    input_startup(); // Depends on: logger, event, memory
+
+    if (!renderer_startup(
+            application_state.game_inst->config.name,
+            &(application_state.platform_state))) {
+        ENGINE_FATAL("Failed to initialize renderer frontend");
+        return FALSE;
+    }
 
     event_register_listener(
         Event_Code::APPLICATION_QUIT,
@@ -87,7 +97,8 @@ b8 application_initialize(Game* game_inst) {
         nullptr,
         application_on_key);
 
-    if (!application_state.game_inst->initialize(application_state.game_inst)) {
+    if (!application_state.game_inst->initialize(
+            application_state.game_inst)) {
         ENGINE_ERROR("Failed to create game");
         return FALSE;
     }
@@ -103,7 +114,7 @@ b8 application_initialize(Game* game_inst) {
     is_initialized = TRUE;
     ENGINE_DEBUG("Subsystems initialized correctly.");
 
-    ENGINE_DEBUG(memory_get_current_usage());  // WARN: Memory leak because the heap allocated string must be deallocated
+    ENGINE_DEBUG(memory_get_current_usage()); // WARN: Memory leak because the heap allocated string must be deallocated
 
     return TRUE;
 }
@@ -129,7 +140,7 @@ void application_run() {
             // clock will be updates once per frame
             absolute_clock_update(&application_state.clock);
             f64 current_time = application_state.clock.elapsed_time;
-            f64 delta_t = current_time - last_time;  // seconds
+            f64 delta_t = current_time - last_time; // seconds
 
             // We need to compute the time needed to render an image
             f64 frame_start_time = platform_get_absolute_time();
@@ -148,6 +159,13 @@ void application_run() {
                 ENGINE_FATAL("Game render failed. Aborting");
                 application_state.is_running = FALSE;
                 break;
+            }
+
+            Render_Packet packet;
+            packet.delta_time = delta_t;
+
+            if (!renderer_draw_frame(&packet)) {
+                application_state.is_running = FALSE;
             }
 
             f64 frame_end_time = platform_get_absolute_time();
@@ -194,6 +212,7 @@ void application_shutdown() {
         nullptr,
         application_on_key);
 
+    renderer_shutdown();
     input_shutdown();
     event_shutdown();
     memory_shutdown();
@@ -209,12 +228,12 @@ b8 application_on_event(
     void* listener,
     Event_Context data) {
     switch (code) {
-        case Event_Code::APPLICATION_QUIT:
-            application_state.is_running = FALSE;
-            return TRUE;  // Stop other listeners from consuming the message
-        default:
-            // Propagate event to other listeners
-            return FALSE;
+    case Event_Code::APPLICATION_QUIT:
+        application_state.is_running = FALSE;
+        return TRUE; // Stop other listeners from consuming the message
+    default:
+        // Propagate event to other listeners
+        return FALSE;
     }
 }
 
@@ -223,33 +242,37 @@ b8 application_on_key(
     void* sender,
     void* listener,
     Event_Context data) {
+
     switch (code) {
-        case Event_Code::KEY_PRESSED: {
-            Keyboard_Key key = static_cast<Keyboard_Key>(data.data.u16[0]);
-            u16 modifiers = data.data.u16[1];
 
-            if (key == Keyboard_Key::ESCAPE) {
-                event_fire(
-                    Event_Code::APPLICATION_QUIT,
-                    nullptr,
-                    data);
+    case Event_Code::KEY_PRESSED: {
+        Keyboard_Key key = static_cast<Keyboard_Key>(data.data.u16[0]);
+        u16 modifiers = data.data.u16[1];
 
-                return TRUE;
+        if (key == Keyboard_Key::ESCAPE) {
+            event_fire(
+                Event_Code::APPLICATION_QUIT,
+                nullptr,
+                data);
 
-            } else if (key == Keyboard_Key::A) {
-                ENGINE_INFO("Explicit key 'A' pressed");
-            } else {
-                ENGINE_INFO("Character '%c' pressed ", key);
-            }
-        } break;
-        case Event_Code::KEY_RELEASED: {
-            Keyboard_Key key = static_cast<Keyboard_Key>(data.data.u16[0]);
+            return TRUE;
 
-            if (key == Keyboard_Key::B)
-                ENGINE_INFO("Explicit key 'B' released");
-        } break;
-        default:
-            return FALSE;
+        } else if (key == Keyboard_Key::A) {
+            ENGINE_INFO("Explicit key 'A' pressed");
+        } else {
+            ENGINE_INFO("Character '%c' pressed ", key);
+        }
+    } break;
+
+    case Event_Code::KEY_RELEASED: {
+        Keyboard_Key key = static_cast<Keyboard_Key>(data.data.u16[0]);
+
+        if (key == Keyboard_Key::B)
+            ENGINE_INFO("Explicit key 'B' released");
+    } break;
+
+    default:
+        return FALSE;
     }
 
     return FALSE;

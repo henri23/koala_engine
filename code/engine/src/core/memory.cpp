@@ -21,9 +21,10 @@ internal const char* memory_tag_strings[(u64)Memory_Tag::MAX_ENTRIES] = {
     "STRING   :",
     "GAME     :",
     "INPUT    :",
+    "RENDERER :",
 };
 
-void memory_initialize() {
+void memory_startup() {
     // We do not zero when startup is called because the memory is available
     // before the application is started
     // platform_zero_memory(&stats, sizeof(stats));

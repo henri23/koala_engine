@@ -3,6 +3,7 @@ project(testbed)
 
 set(CMAKE_CXX_STANDARD 23)
 
+add_compile_definitions(DEBUG_BUILD)
 file(GLOB_RECURSE TESTBED_SRC "src/*.cpp")
 
 add_executable(${PROJECT_NAME} ${TESTBED_SRC})

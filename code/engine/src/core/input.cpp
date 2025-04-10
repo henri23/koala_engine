@@ -14,7 +14,7 @@ struct Mouse_State {
     b8 buttons[(u16)Mouse_Button::MAX_BUTTONS];
 };
 
-struct Input_State {
+struct input_state {
     Keyboard_State keyboard_current;
     Keyboard_State keyboard_previous;
     Mouse_State mouse_current;
@@ -22,7 +22,7 @@ struct Input_State {
 };
 
 internal b8 is_initialized = FALSE;
-internal Input_State state;
+internal input_state state;
 
 void input_startup() {
     memory_zero(&state, sizeof(state));

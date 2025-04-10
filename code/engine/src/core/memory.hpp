@@ -9,11 +9,12 @@ enum class Memory_Tag {
     STRING,
     GAME,
     INPUT,
+	RENDERER,
 
     MAX_ENTRIES
 };
 
-void memory_initialize();
+void memory_startup();
 
 void memory_shutdown();
 
