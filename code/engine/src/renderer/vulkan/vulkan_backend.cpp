@@ -1,6 +1,4 @@
-#include "core/memory.hpp"
 #include "renderer/renderer_types.hpp"
-#include "vulkan_platform.hpp"
 #include "vulkan_types.hpp"
 
 #include "core/asserts.hpp"
@@ -9,7 +7,6 @@
 
 #include "containers/auto_array.hpp"
 
-#include <cstdlib>
 #include <vulkan/vulkan_core.h>
 
 internal Vulkan_Context context;
@@ -20,6 +17,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
     VkDebugUtilsMessageTypeFlagsEXT message_types,
     const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
     void* user_data);
+
+b8 vulkan_create_debug_logger(VkInstance* instance);
+
+b8 vulkan_enable_validation_layers(Auto_Array<const char*>* required_layers_array);
 
 b8 vulkan_initialize(
     Renderer_Backend* backend,
@@ -51,9 +52,18 @@ b8 vulkan_initialize(
     required_extensions_array.add(VK_KHR_SURFACE_EXTENSION_NAME);
 
     // Get platform specific extensions
-    platform_get_required_extension_names(&required_extensions_array);
+#if ENGINE_PLATFORM_LINUX
+    ENGINE_INFO("Attaching XCB surface for LINUX platform");
+    required_extensions_array.add("VK_KHR_xcb_surface");
+#elif ENGINE_PLATFORM_WINDOWS
+    ENGINE_INFO("Attaching WIN32 surface for Windows platform");
+    required_extensions_array.add("VK_KHR_win32_surface");
+#endif
 
-#ifdef DEBUG_BUILD
+    Auto_Array<const char*> required_layers_array;
+
+#ifdef DEBUG_BUILD // Only enable validation layer in debug builds
+                   // Add debug extensions
     required_extensions_array.add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     ENGINE_DEBUG("Required VULKAN extensions:");
@@ -61,152 +71,46 @@ b8 vulkan_initialize(
         ENGINE_DEBUG(required_extensions_array[i]);
     }
 
-#endif
-
-    const char** required_validation_layer_names = 0;
-    u32 required_validation_layer_count = 0;
-
-#ifdef DEBUG_BUILD
-    ENGINE_INFO("Vulkan validation layers enabled. Enumerating...");
-
-    // Declare the list of layers that we require
-    Auto_Array<const char*> required_layers_array;
-
-    required_layers_array.add("VK_LAYER_KHRONOS_validation");
-
-    required_validation_layer_count = required_layers_array.length;
-    required_validation_layer_names = required_layers_array.data;
-
-    // Get the list of the available validation layers
-    u32 available_layer_count;
-
-	// To allocate the array needed for storing the available layers, first I need to 
-	// know how many layers there are
-    VK_ENSURE_SUCCESS(
-        vkEnumerateInstanceLayerProperties(
-            &available_layer_count,
-            nullptr));
-
-    Auto_Array<VkLayerProperties> available_layers_array;
-
-    available_layers_array.reserve(available_layer_count);
-
-    VK_ENSURE_SUCCESS(
-        vkEnumerateInstanceLayerProperties(
-            &available_layer_count,
-            available_layers_array.data));
-
-	// Manually set length since the Vulkan method directly modified the data pointer, 
-	// not throw the add method. If length isn't updated, the index accessing would give
-	// error due to the assertiong of index < length
-    available_layers_array.length = available_layer_count;
-
-    ENGINE_DEBUG("Available Vulkan layers:");
-    for (u32 i = 0; i < available_layer_count; ++i) {
-        ENGINE_DEBUG(available_layers_array[i].layerName);
-    }
-
-    for (u32 i = 0; i < required_validation_layer_count; ++i) {
-        ENGINE_INFO("Searching for layer: %s ...",
-                    required_validation_layer_names[i]);
-
-        b8 found = FALSE;
-        for (u32 j = 0; j < available_layer_count; ++j) {
-            if (string_check_equal(
-                    required_validation_layer_names[i],
-                    available_layers_array[j].layerName)) {
-                found = TRUE;
-                ENGINE_INFO("Found.");
-                break;
-            }
-        }
-
-        if (!found) {
-            ENGINE_FATAL("Required validation layer is missing: %s",
-                         required_validation_layer_names[i]);
-            return FALSE;
-        }
-    }
-
-    ENGINE_INFO("All required validaton layers are valid");
-
+    // Add validation layers
+    vulkan_enable_validation_layers(&required_layers_array);
 #endif
 
     createInfo.enabledExtensionCount = required_extensions_array.length;
     createInfo.ppEnabledExtensionNames = required_extensions_array.data;
-    createInfo.enabledLayerCount = required_validation_layer_count;
-    createInfo.ppEnabledLayerNames = required_validation_layer_names;
+    createInfo.enabledLayerCount = required_layers_array.length;
+    createInfo.ppEnabledLayerNames = required_layers_array.data;
 
     VK_ENSURE_SUCCESS(
-        vkCreateInstance(
-            &createInfo,
-            context.allocator,
-            &context.instance));
+        vkCreateInstance(&createInfo,
+                         context.allocator,
+                         &context.instance));
 
-    ENGINE_DEBUG("Instantiated VULKAN backend successfully");
-
-    // TODO: The darrays are not cleaned from memory!
-
-    // required_extensions_array.free();
-    // required_layers_array.free();
-    // available_layers_array.free();
+    required_extensions_array.free();
+    required_layers_array.free();
 
 #ifdef DEBUG_BUILD
-    ENGINE_INFO("Creating Vulkan debug logger");
-
-    u32 log_severity =
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT ||
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-
-    VkDebugUtilsMessengerCreateInfoEXT debug_create_info =
-        {VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
-
-    debug_create_info.messageSeverity = log_severity;
-    debug_create_info.messageType =
-        VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-        VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
-        VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
-    debug_create_info.pfnUserCallback = vk_debug_callback;
-    debug_create_info.pUserData = nullptr;
-
-    PFN_vkCreateDebugUtilsMessengerEXT func =
-        (PFN_vkCreateDebugUtilsMessengerEXT)
-            vkGetInstanceProcAddr(
-                context.instance,
-                "vkCreateDebugUtilsMessengerEXT");
-
-    RUNTIME_ASSERT_MSG(func, "Failed to create debug messenger");
-
-    VK_ENSURE_SUCCESS(
-        func(
-            context.instance,
-            &debug_create_info,
-            context.allocator,
-            &context.debug_messenger));
-
-    ENGINE_DEBUG("Vulkan debugger created");
-
+    // Depends on the instance
+    vulkan_create_debug_logger(&context.instance);
 #endif
+
+    ENGINE_INFO("Vulkan backend initialized");
 
     return TRUE;
 }
 
-void vulkan_shutdown(
-    Renderer_Backend* backend) {
+void vulkan_shutdown(Renderer_Backend* backend) {
 
 #ifdef DEBUG_BUILD
     ENGINE_DEBUG("Destroying Vulkan debugger...");
     if (context.debug_messenger) {
         PFN_vkDestroyDebugUtilsMessengerEXT func =
             (PFN_vkDestroyDebugUtilsMessengerEXT)
-                vkGetInstanceProcAddr(
-                    context.instance,
-                    "vkDestroyDebugUtilsMessengerEXT");
+                vkGetInstanceProcAddr(context.instance,
+                                      "vkDestroyDebugUtilsMessengerEXT");
 
-        func(
-            context.instance,
-            context.debug_messenger,
-            context.allocator);
+        func(context.instance,
+             context.debug_messenger,
+             context.allocator);
     }
 #endif
 
@@ -217,21 +121,112 @@ void vulkan_shutdown(
     ENGINE_DEBUG("Vulkan renderer shut down");
 }
 
-void vulkan_on_resized(
-    Renderer_Backend* backend,
-    u16 width,
-    u16 height) {
+void vulkan_on_resized(Renderer_Backend* backend,
+                       u16 width,
+                       u16 height) {
 }
 
-b8 vulkan_begin_frame(
-    Renderer_Backend* backend,
-    f32 delta_t) {
+b8 vulkan_begin_frame(Renderer_Backend* backend,
+                      f32 delta_t) {
     return TRUE;
 }
 
-b8 vulkan_end_frame(
-    Renderer_Backend* backend,
-    f32 delta_t) {
+b8 vulkan_end_frame(Renderer_Backend* backend,
+                    f32 delta_t) {
+    return TRUE;
+}
+
+b8 vulkan_enable_validation_layers(Auto_Array<const char*>* required_layers_array) {
+
+    ENGINE_INFO("Vulkan validation layers enabled. Enumerating...");
+
+    // Declare the list of layers that we require
+
+    required_layers_array->add("VK_LAYER_KHRONOS_validation");
+
+    // Need to check whether the validation layer requuested is supported
+    u32 available_layer_count;
+
+    // To allocate the array needed for storing the available layers, first I need to
+    // know how many layers there are
+    VK_ENSURE_SUCCESS(
+        vkEnumerateInstanceLayerProperties(&available_layer_count,
+                                           nullptr));
+
+    VkLayerProperties available_layers_array[available_layer_count];
+
+    VK_ENSURE_SUCCESS(
+        vkEnumerateInstanceLayerProperties(&available_layer_count,
+                                           available_layers_array));
+
+    // ENGINE_DEBUG("Available Vulkan layers:");
+    // for (u32 i = 0; i < available_layer_count; ++i) {
+    //     ENGINE_DEBUG(available_layers_array[i].layerName);
+    // }
+
+    for (u32 i = 0; i < required_layers_array->length; ++i) {
+        ENGINE_INFO("Searching for layer: %s ...",
+                    required_layers_array->data[i]);
+
+        b8 found = FALSE;
+        for (u32 j = 0; j < available_layer_count; ++j) {
+            if (string_check_equal(
+                    required_layers_array->data[i],
+                    available_layers_array[j].layerName)) {
+                found = TRUE;
+                ENGINE_INFO("Found.");
+                break;
+            }
+        }
+
+        if (!found) {
+            ENGINE_FATAL("Required validation layer is missing: %s",
+                         required_layers_array->data[i]);
+            return FALSE;
+        }
+    }
+
+    ENGINE_INFO("All required validaton layers are valid");
+    return TRUE;
+}
+
+b8 vulkan_create_debug_logger(VkInstance* instance) {
+
+    ENGINE_DEBUG("Creating Vulkan debug logger");
+
+    VkDebugUtilsMessengerCreateInfoEXT debug_create_info =
+        {VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
+
+    debug_create_info.messageSeverity =
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+
+    debug_create_info.messageType =
+        VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+
+    debug_create_info.pfnUserCallback = vk_debug_callback;
+    debug_create_info.pUserData = nullptr; // Optional pointer that can be passed to the logger
+
+    // The vkCreateDebugUtilsMessengerEXT is an extension function so it is not
+    // loaded automatically. Its address must be looked up manually
+    PFN_vkCreateDebugUtilsMessengerEXT func =
+        (PFN_vkCreateDebugUtilsMessengerEXT)
+            vkGetInstanceProcAddr(*instance,
+                                  "vkCreateDebugUtilsMessengerEXT");
+
+    RUNTIME_ASSERT_MSG(func, "Failed to create debug messenger");
+
+    VK_ENSURE_SUCCESS(
+        func(*instance, // Pass instance because debugger is specific for inst.
+             &debug_create_info,
+             context.allocator,
+             &context.debug_messenger));
+
+    ENGINE_DEBUG("Vulkan debugger created");
     return TRUE;
 }
 

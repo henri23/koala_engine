@@ -9,6 +9,7 @@
 struct Vulkan_Context{
 	VkInstance instance;
 	VkAllocationCallbacks* allocator;
+	VkPhysicalDevice physical_device; // Implicitly destroyed destroying VkInstance
 #ifdef DEBUG_BUILD
 	VkDebugUtilsMessengerEXT debug_messenger;
 #endif

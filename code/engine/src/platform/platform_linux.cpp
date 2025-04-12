@@ -1,5 +1,3 @@
-#include <xcb/xproto.h>
-
 #include "platform.hpp"
 
 #if ENGINE_PLATFORM_LINUX
@@ -14,10 +12,6 @@
 
 #    include "core/input.hpp"
 #    include "core/logger.hpp"
-
-#    include "containers/auto_array.hpp"
-
-#    include "renderer/vulkan/vulkan_platform.hpp"
 
 // NOTE: For the tutorial followed to write this platform layer see: https://www.youtube.com/watch?v=IPGROgWnI_8
 
@@ -242,10 +236,6 @@ b8 platform_message_pump(Platform_State* plat_state) {
     }
 
     return !quit_flagged;
-}
-
-void platform_get_required_extension_names(Auto_Array<const char*>* names_array) {
-    names_array->add("VK_KHR_xcb_surface");
 }
 
 void platform_shutdown(Platform_State* plat_state) {

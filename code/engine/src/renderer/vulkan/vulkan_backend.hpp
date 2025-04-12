@@ -17,6 +17,7 @@ void vulkan_on_resized(
 
 b8 vulkan_begin_frame(
     Renderer_Backend* backend,
+
     f32 delta_t);
 
 b8 vulkan_end_frame(

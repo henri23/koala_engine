@@ -104,4 +104,3 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes");
 #define KOALA_API
 #endif
 #endif
-#define SKIP_ASAN __attribute__((no_sanitize("address")))
