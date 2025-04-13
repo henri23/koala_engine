@@ -13,7 +13,6 @@ echo "[BUILDER]: Building everything..."
 
 # Run cmake to configure the project
 time cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_CXX_COMPILER=clang++ -B../bin . -D CMAKE_BUILD_TYPE=Debug
-# time cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -B../bin . -D CMAKE_BUILD_TYPE=Debug
 
 cd ../bin
 ln -sf "$(pwd)/compile_commands.json" ../code/compile_commands.json
