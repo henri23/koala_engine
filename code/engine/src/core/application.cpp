@@ -9,7 +9,7 @@
 #include "platform/platform.hpp"
 
 #include "renderer/renderer_frontend.hpp"
-#include "renderer/renderer_types.hpp"
+#include "renderer/renderer_types.inl"
 
 #define TARGET_FRAME_TIME (f64)1.0f / 60
 

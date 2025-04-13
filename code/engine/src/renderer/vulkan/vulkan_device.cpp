@@ -1,7 +1,27 @@
 #include "vulkan_device.hpp"
+#include "core/logger.hpp"
+#include "core/string.hpp"
+#include "renderer/vulkan/vulkan_types.inl"
 #include <vulkan/vulkan_core.h>
 
-b8 vulkan_device_select(Vulkan_Context* context) {
+struct Device_Queue_Indices {
+    u32 graphics_family_index;
+    u32 transfer_family_index;
+    u32 present_family_index;
+    u32 compute_family_index;
+};
+
+b8 physical_device_meets_requirements(
+    VkPhysicalDevice device,
+    const VkPhysicalDeviceProperties* properties,
+    const VkPhysicalDeviceFeatures* features,
+    const Vulkan_Physical_Device_Requirements* requirements,
+    Device_Queue_Indices* out_indices);
+
+b8 select_physical_device();
+
+b8 vulkan_device_initialize(Vulkan_Context* context,
+                        Vulkan_Physical_Device_Requirements* requirements) {
 
     u32 physical_device_count = 0;
 
@@ -20,8 +40,8 @@ b8 vulkan_device_select(Vulkan_Context* context) {
                                &physical_device_count,
                                physical_devices_array);
 
-    // Evaluate GPUs -> If mutliple GPUs are present in the machine, we need to pick
-    // the most "qualified" one
+    // Evaluate GPUs -> If mutliple GPUs are present in the machine,
+    // we need to pick the most "qualified" one
     for (u32 i = 0; i < physical_device_count; ++i) {
         VkPhysicalDeviceProperties device_properties;
         VkPhysicalDeviceFeatures device_features;
@@ -37,11 +57,210 @@ b8 vulkan_device_select(Vulkan_Context* context) {
             physical_devices_array[i],
             &device_memory_properties);
 
-		// Score the GPUs based on the properties they provide
-		
+        Device_Queue_Indices queue_indices;
+
+        // Score the GPUs based on the properties they provide
+        b8 result = physical_device_meets_requirements(
+            physical_devices_array[i],
+            &device_properties,
+            &device_features, requirements,
+            &queue_indices);
+
+        if (result) {
+
+            ENGINE_INFO("Selected device: '%s'", device_properties.deviceName);
+            switch (device_properties.deviceType) {
+            default:
+            case VK_PHYSICAL_DEVICE_TYPE_OTHER:
+                ENGINE_INFO("GPU type is unknown.");
+                break;
+            case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+                ENGINE_INFO("GPU type is discrete.");
+                break;
+            case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+                ENGINE_INFO("GPU type is integrated.");
+                break;
+            case VK_PHYSICAL_DEVICE_TYPE_CPU:
+                ENGINE_INFO("GPU type is CPU.");
+                break;
+            case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+                ENGINE_INFO("GPU type is virtual.");
+                break;
+            }
+
+            ENGINE_INFO("GPU Driver Version: %d.%d.%d",
+                        VK_VERSION_MAJOR(device_properties.driverVersion),
+                        VK_VERSION_MINOR(device_properties.driverVersion),
+                        VK_VERSION_PATCH(device_properties.driverVersion));
+
+            ENGINE_INFO("Vulkan API Version: %d.%d.%d",
+                        VK_VERSION_MAJOR(device_properties.apiVersion),
+                        VK_VERSION_MINOR(device_properties.apiVersion),
+                        VK_VERSION_PATCH(device_properties.apiVersion));
+
+            for (u32 j = 0; j < device_memory_properties.memoryHeapCount; ++j) {
+                f32 memory_size = device_memory_properties.memoryHeaps[j].size / (float)GIB;
+                if (device_memory_properties.memoryHeaps[j].flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+                    ENGINE_INFO("Local GPU memory: %.2f GiB", memory_size);
+                } else {
+                    ENGINE_INFO("Shared GPU memory: %.2f GiB", memory_size);
+                }
+            }
+
+			context->device.physical_device = physical_devices_array[i];
+			context->device.physical_device_properties = device_properties;
+			context->device.physical_device_features = device_features;
+			context->device.physical_device_memory = device_memory_properties;
+
+			context->device.grahic_queue_index = queue_indices.graphics_family_index;
+			context->device.transfer_queue_index = queue_indices.transfer_family_index;
+			context->device.compute_queue_index = queue_indices.compute_family_index;
+			context->device.present_queue_index = queue_indices.present_family_index;
+
+            break;
+        }
     }
 
-    return TRUE;
+    return FALSE;
+}
+
+b8 physical_device_meets_requirements(
+    VkPhysicalDevice device,
+    const VkPhysicalDeviceProperties* properties,
+    const VkPhysicalDeviceFeatures* features,
+    const Vulkan_Physical_Device_Requirements* requirements,
+    Device_Queue_Indices* out_indices) {
+
+    // Initialize the family index to a unreasonable value so that it is
+    // evident whether or not a queue family that supports given commands
+    // is found
+    out_indices->graphics_family_index = -1;
+    out_indices->compute_family_index = -1;
+    out_indices->present_family_index = -1;
+    out_indices->transfer_family_index = -1;
+
+    u32 queue_family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device,
+                                             &queue_family_count,
+                                             nullptr);
+
+    VkQueueFamilyProperties queue_family_array[queue_family_count];
+
+    vkGetPhysicalDeviceQueueFamilyProperties(device,
+                                             &queue_family_count,
+                                             queue_family_array);
+
+    if (requirements->discrete_gpu &&
+        properties->deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+        ENGINE_DEBUG("Device is not a discrete GPU. Skipping.");
+        return FALSE;
+    }
+
+    ENGINE_INFO("Graphics | Present | Compute | Transfer | Name");
+
+    // If a queue family offers Transfer commands capability on top of other
+    // types of commands, maybe it is not the best possible options, so the
+    // target family queue would be a queue "dedicated" to transfer commands.
+    // This means that the more additional commands to the transfer ones a
+    // queue will have, the less optimal it is to be chosen as for transfer.
+    // Obviously if it is the only family queue that provides transfer we will
+    // still pick it
+    u8 min_transfer_score = 255;
+
+    for (u32 j = 0; j < queue_family_count; ++j) {
+        u8 current_transfer_score = 0;
+
+        if (queue_family_array[j].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            out_indices->graphics_family_index = j;
+            ++current_transfer_score;
+        }
+
+        if (queue_family_array[j].queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            out_indices->compute_family_index = j;
+            ++current_transfer_score;
+        }
+
+        // Mark this family as the go to transfer queue family only if it is
+        // lower than the current minimum
+        if (queue_family_array[j].queueFlags & VK_QUEUE_TRANSFER_BIT &&
+            current_transfer_score <= min_transfer_score) {
+            out_indices->transfer_family_index = j;
+            min_transfer_score = current_transfer_score;
+        }
+
+        // TODO: Handle present queue, needs surface setup
+    }
+
+    ENGINE_INFO("       %d |       %d |       %d |        %d | %s",
+                out_indices->graphics_family_index,
+                9, // Present family queue index
+                out_indices->compute_family_index,
+                out_indices->transfer_family_index,
+                properties->deviceName);
+
+    if ((!requirements->graphics ||
+         (requirements->graphics && out_indices->graphics_family_index != -1)) &&
+        (!requirements->compute ||
+         (requirements->compute && out_indices->compute_family_index != -1)) &&
+        (!requirements->transfer ||
+         (requirements->transfer && out_indices->transfer_family_index != -1)) &&
+        (!requirements->present ||
+         (requirements->present && out_indices->present_family_index != -1))) {
+
+        ENGINE_INFO("Device meets all the requirements.");
+
+        ENGINE_TRACE("Graphics queue family index", out_indices->graphics_family_index);
+        ENGINE_TRACE("Compute queue family index", out_indices->compute_family_index);
+        ENGINE_TRACE("Transfer queue family index", out_indices->transfer_family_index);
+        ENGINE_TRACE("Present queue family index", out_indices->present_family_index);
+
+        // Check for last whether the device supports all the required ext.
+        if (requirements->device_extension_names->length > 0) {
+            u32 available_extensions_count = 0;
+
+            VK_ENSURE_SUCCESS(vkEnumerateDeviceExtensionProperties(
+                device,
+                nullptr,
+                &available_extensions_count,
+                nullptr));
+
+            // TODO : allocate in HEAP
+            VkExtensionProperties extension_properties[available_extensions_count];
+
+            VK_ENSURE_SUCCESS(vkEnumerateDeviceExtensionProperties(
+                device,
+                nullptr,
+                &available_extensions_count,
+                extension_properties));
+
+            for (u32 i = 0; i < requirements->device_extension_names->length; ++i) {
+                b8 found = FALSE;
+
+                for (u32 j = 0; j < available_extensions_count; ++j) {
+                    if (string_check_equal(
+                            extension_properties[j].extensionName,
+                            requirements->device_extension_names->data[i]) == 0) {
+
+                        found = TRUE;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    ENGINE_INFO(
+                        "Required extension not found: '%s', skipping device '%s'",
+                        requirements->device_extension_names->data[i],
+                        properties->deviceName);
+
+                    return FALSE;
+                }
+            }
+        }
+
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 void vulkan_device_shutdown(Vulkan_Context* context) {

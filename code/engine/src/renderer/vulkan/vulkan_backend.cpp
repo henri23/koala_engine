@@ -1,5 +1,6 @@
-#include "renderer/renderer_types.hpp"
-#include "vulkan_types.hpp"
+#include "renderer/renderer_types.inl"
+#include "renderer/vulkan/vulkan_device.hpp"
+#include "vulkan_types.inl"
 
 #include "core/asserts.hpp"
 #include "core/logger.hpp"
@@ -18,9 +19,11 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
     const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
     void* user_data);
 
-b8 vulkan_create_debug_logger(VkInstance* instance);
+b8 vulkan_create_debug_logger(
+    VkInstance* instance);
 
-b8 vulkan_enable_validation_layers(Auto_Array<const char*>* required_layers_array);
+b8 vulkan_enable_validation_layers(
+    Auto_Array<const char*>* required_layers_array);
 
 b8 vulkan_initialize(
     Renderer_Backend* backend,
@@ -62,8 +65,9 @@ b8 vulkan_initialize(
 
     Auto_Array<const char*> required_layers_array;
 
-#ifdef DEBUG_BUILD // Only enable validation layer in debug builds
-                   // Add debug extensions
+// Only enable validation layer in debug builds
+#ifdef DEBUG_BUILD 
+    // Add debug extensions
     required_extensions_array.add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     ENGINE_DEBUG("Required VULKAN extensions:");
@@ -93,7 +97,28 @@ b8 vulkan_initialize(
     vulkan_create_debug_logger(&context.instance);
 #endif
 
+    Auto_Array<const char*> extension_requirements;
+
+    extension_requirements.add(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+    // Setup Vulkan device
+    Vulkan_Physical_Device_Requirements device_requirements;
+    device_requirements.compute = TRUE;
+    device_requirements.sampler_anisotropy = TRUE;
+    device_requirements.graphics = TRUE;
+    device_requirements.transfer = TRUE;
+    device_requirements.present = FALSE; // TODO: Setup present queue lookup
+    device_requirements.discrete_gpu = TRUE;
+    device_requirements.device_extension_names = &extension_requirements;
+
+    if (!vulkan_device_initialize(&context, &device_requirements)) {
+        ENGINE_FATAL("No device that fulfills all the requirements was found in the machine");
+        return FALSE;
+    }
+
     ENGINE_INFO("Vulkan backend initialized");
+
+    extension_requirements.free();
 
     return TRUE;
 }
@@ -136,19 +161,19 @@ b8 vulkan_end_frame(Renderer_Backend* backend,
     return TRUE;
 }
 
-b8 vulkan_enable_validation_layers(Auto_Array<const char*>* required_layers_array) {
+b8 vulkan_enable_validation_layers(
+    Auto_Array<const char*>* required_layers_array) {
 
     ENGINE_INFO("Vulkan validation layers enabled. Enumerating...");
 
     // Declare the list of layers that we require
-
     required_layers_array->add("VK_LAYER_KHRONOS_validation");
 
     // Need to check whether the validation layer requuested is supported
     u32 available_layer_count;
 
-    // To allocate the array needed for storing the available layers, first I need to
-    // know how many layers there are
+    // To allocate the array needed for storing the available layers,
+    // first I need to know how many layers there are
     VK_ENSURE_SUCCESS(
         vkEnumerateInstanceLayerProperties(&available_layer_count,
                                            nullptr));
