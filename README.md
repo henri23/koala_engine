@@ -1,7 +1,9 @@
 # Koala Game Engine
 
 <!-- ![Project Logo](images/koala_engine_logo2.png) -->
-<img src="images/koala_engine_logo2.png" alt="Project Logo" width="300">
+<p align="center">
+  <img src="images/koala_engine_logo2.png" alt="Project Logo" width="300">
+</p>
 
 This work represents a novel atempt at creating a 3D game engine developed in C++ (mostly C style C++). The engine does not use external third-party libraries and seeks to have as little overhead as possible, i. e. polymorphism, classes and inheritance, smart pointers etc. Heavily inspired by the coding phylosophy of famous game devs like Jonathan Blow, Casey Muratori, Travis Vroman etc.
 
