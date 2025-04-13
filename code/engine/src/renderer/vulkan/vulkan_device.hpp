@@ -1,7 +1,7 @@
 #pragma once
 
 #include "defines.hpp"
-#include "vulkan_types.inl"
+#include "vulkan_types.hpp"
 
 b8 vulkan_device_initialize(Vulkan_Context* context,
                         Vulkan_Physical_Device_Requirements* requirements);

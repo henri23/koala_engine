@@ -13,6 +13,12 @@
 #    include "core/input.hpp"
 #    include "core/logger.hpp"
 
+#    include "containers/auto_array.hpp"
+
+#    define VK_USE_PLATFORM_XCB_KHR // Define this macro to avoid including vulkan_xcb.h
+#    include "renderer/vulkan/vulkan_types.hpp"
+#    include <vulkan/vulkan.h>
+
 // NOTE: For the tutorial followed to write this platform layer see: https://www.youtube.com/watch?v=IPGROgWnI_8
 
 #    if _POSIC_X_SOURCE >= 199309L
@@ -122,6 +128,33 @@ b8 platform_startup(Platform_State* plat_state,
     }
 
     ENGINE_DEBUG("Platform layer with LINUX interface initialized")
+
+    return TRUE;
+}
+
+// Vulkan platform specific definitions
+void platform_get_required_extensions(Auto_Array<const char*>* required_extensions) {
+    ENGINE_INFO("Attaching XCB surface for LINUX platform");
+    required_extensions->add("VK_KHR_xcb_surface");
+}
+
+b8 platform_create_vulkan_surface(Vulkan_Context* context, Platform_State* plat_state) {
+
+    ENGINE_INFO("Creating Vulkan XCB surface...");
+    Internal_State* state = static_cast<Internal_State*>(plat_state->internal_state);
+
+    VkXcbSurfaceCreateInfoKHR create_info = {VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR};
+    create_info.connection = state->connection;
+    create_info.window = state->window_id;
+
+    VK_ENSURE_SUCCESS(
+        vkCreateXcbSurfaceKHR(
+            context->instance,
+            &create_info,
+            context->allocator,
+            &context->surface));
+
+    ENGINE_INFO("Vulkan XCB surface created.");
 
     return TRUE;
 }

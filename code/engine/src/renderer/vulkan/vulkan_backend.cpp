@@ -1,6 +1,7 @@
 #include "renderer/renderer_types.inl"
 #include "renderer/vulkan/vulkan_device.hpp"
-#include "vulkan_types.inl"
+#include "renderer/vulkan/vulkan_platform.hpp"
+#include "vulkan_types.hpp"
 
 #include "core/asserts.hpp"
 #include "core/logger.hpp"
@@ -55,18 +56,12 @@ b8 vulkan_initialize(
     required_extensions_array.add(VK_KHR_SURFACE_EXTENSION_NAME);
 
     // Get platform specific extensions
-#if ENGINE_PLATFORM_LINUX
-    ENGINE_INFO("Attaching XCB surface for LINUX platform");
-    required_extensions_array.add("VK_KHR_xcb_surface");
-#elif ENGINE_PLATFORM_WINDOWS
-    ENGINE_INFO("Attaching WIN32 surface for Windows platform");
-    required_extensions_array.add("VK_KHR_win32_surface");
-#endif
+    platform_get_required_extensions(&required_extensions_array);
 
     Auto_Array<const char*> required_layers_array;
 
 // Only enable validation layer in debug builds
-#ifdef DEBUG_BUILD 
+#ifdef DEBUG_BUILD
     // Add debug extensions
     required_extensions_array.add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
@@ -111,6 +106,16 @@ b8 vulkan_initialize(
     device_requirements.discrete_gpu = TRUE;
     device_requirements.device_extension_names = &extension_requirements;
 
+    // Create platform specific surface. Since the surface creation will
+    // depend on the platform API, it is best that it is implemented in
+    // the platform layer
+    if (!platform_create_vulkan_surface(&context, plat_state)) {
+        ENGINE_FATAL("Failed to create platform specific surface");
+
+        return FALSE;
+    }
+
+	// Select physical device and create logical device
     if (!vulkan_device_initialize(&context, &device_requirements)) {
         ENGINE_FATAL("No device that fulfills all the requirements was found in the machine");
         return FALSE;
@@ -124,6 +129,13 @@ b8 vulkan_initialize(
 }
 
 void vulkan_shutdown(Renderer_Backend* backend) {
+
+	vulkan_device_shutdown(&context);
+
+    vkDestroySurfaceKHR(
+        context.instance,
+        context.surface,
+        context.allocator);
 
 #ifdef DEBUG_BUILD
     ENGINE_DEBUG("Destroying Vulkan debugger...");
