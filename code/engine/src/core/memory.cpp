@@ -101,7 +101,7 @@ void* memory_set(void* block, s32 value, u64 size) {
 char* memory_get_current_usage() {
     char utilization_buffer[5000] = "Summary of allocated memory (tagged):\n";
 
-    u64 offset = strlen(utilization_buffer);  // The offset is represented in number of bytes
+    u64 offset = strlen(utilization_buffer); // The offset is represented in number of bytes
 
     u64 max_tags = static_cast<u64>(Memory_Tag::MAX_ENTRIES);
     for (u32 i = 0; i < max_tags; ++i) {
@@ -119,7 +119,7 @@ char* memory_get_current_usage() {
             amount = (float)stats.tagged_allocations[i] / KIB;
         } else {
             usage_unit[0] = 'B';
-            usage_unit[1] = 0;  // Append a null termination character to overwrite the end of the string
+            usage_unit[1] = 0; // Append a null termination character to overwrite the end of the string
             amount = (float)stats.tagged_allocations[i];
         }
 

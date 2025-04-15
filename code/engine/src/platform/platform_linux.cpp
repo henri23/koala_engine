@@ -2,30 +2,30 @@
 
 #if ENGINE_PLATFORM_LINUX
 
-#    include <stdio.h>
-#    include <stdlib.h>
-#    include <string.h>
-#    include <xcb/xcb.h>
-#    include <xcb/xcb_icccm.h>
-#    include <xcb/xcb_keysyms.h>
-#    include <xcb/xcb_util.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <xcb/xcb.h>
+#include <xcb/xcb_icccm.h>
+#include <xcb/xcb_keysyms.h>
+#include <xcb/xcb_util.h>
 
-#    include "core/input.hpp"
-#    include "core/logger.hpp"
+#include "core/input.hpp"
+#include "core/logger.hpp"
 
-#    include "containers/auto_array.hpp"
+#include "containers/auto_array.hpp"
 
-#    define VK_USE_PLATFORM_XCB_KHR // Define this macro to avoid including vulkan_xcb.h
-#    include "renderer/vulkan/vulkan_types.hpp"
-#    include <vulkan/vulkan.h>
+#define VK_USE_PLATFORM_XCB_KHR // Define this macro to avoid including vulkan_xcb.h
+#include "renderer/vulkan/vulkan_types.hpp"
+#include <vulkan/vulkan.h>
 
 // NOTE: For the tutorial followed to write this platform layer see: https://www.youtube.com/watch?v=IPGROgWnI_8
 
-#    if _POSIC_X_SOURCE >= 199309L
-#        include <time.h>
-#    else
-#        include <unistd.h>
-#    endif
+#if _POSIC_X_SOURCE >= 199309L
+#include <time.h>
+#else
+#include <unistd.h>
+#endif
 
 struct Internal_State {
     xcb_connection_t* connection;
@@ -329,17 +329,17 @@ f64 platform_get_absolute_time() {
 }
 
 void platform_sleep(u64 ms) { // in milliseconds
-#    if _POSIC_X_SOURCE >= 199309L
+#if _POSIC_X_SOURCE >= 199309L
     struct timespec ts;
     ts.tv_sec = ms / 1000;
     ts.tv_nsec = (ms % 1000) * 1000 * 1000;
     nanosleep(&ts, 0);
-#    else
+#else
     if (ms >= 1000) {
         sleep(ms / 1000);
     }
     usleep((ms % 1000) * 1000);
-#    endif
+#endif
 }
 
 // Definitons taken from <X11/keysymdef.h> from LATIN1 section
