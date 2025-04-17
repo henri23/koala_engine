@@ -104,3 +104,5 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes");
 #define KOALA_API
 #endif
 #endif
+
+#define CLAMP(value, min, max) ((value > max) ? max : (value < min) ? min : value)

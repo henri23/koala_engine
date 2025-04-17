@@ -4,6 +4,10 @@
 
 b8 vulkan_swapchain_create(
     Vulkan_Context* context,
-    VkSwapchainKHR* out_swapchain);
+	u32 width,
+	u32 height,
+    Vulkan_Swapchain* out_swapchain);
 
-b8 vulkan_swapchain_shutdown();
+void vulkan_swapchain_shutdown(
+	Vulkan_Context* context, 
+	Vulkan_Swapchain* swapchain);

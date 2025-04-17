@@ -40,6 +40,11 @@ struct Vulkan_Device {
     VkQueue transfer_queue;
 };
 
+struct Vulkan_Swapchain {
+	VkSwapchainKHR handle;
+
+};
+
 struct Vulkan_Context {
     VkInstance instance;
     VkSurfaceKHR surface;
@@ -50,6 +55,7 @@ struct Vulkan_Context {
     VkDebugUtilsMessengerEXT debug_messenger;
 #endif
 
+	Vulkan_Swapchain swapchain;
     Vulkan_Device device;
 };
 
@@ -64,7 +70,7 @@ struct Vulkan_Physical_Device_Requirements {
 };
 
 #define VK_DEVICE_LEVEL_FUNCTION(device, name)             \
-    PFN_##name name = (PFN_##name)vkGetDeviceProcAddr(device, #name); \
+PFN_##name name = (PFN_##name)vkGetDeviceProcAddr(device, #name); \
     RUNTIME_ASSERT_MSG(name, "Could not load device-level Vulkan function");
 
 #define VK_INSTANCE_LEVEL_FUNCTION(instance, name)             \

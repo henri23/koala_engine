@@ -1,10 +1,10 @@
-#include "core/asserts.hpp"
 #include "core/logger.hpp"
 #include "core/string.hpp"
 
 #include "renderer/renderer_types.inl"
 #include "renderer/vulkan/vulkan_device.hpp"
 #include "renderer/vulkan/vulkan_platform.hpp"
+#include "renderer/vulkan/vulkan_swapchain.hpp"
 #include "vulkan_types.hpp"
 
 #include "containers/auto_array.hpp"
@@ -43,8 +43,8 @@ b8 vulkan_initialize(
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.apiVersion = VK_API_VERSION_1_0;
 
-    // CreateInfo struct tells the Vulkan driver which global extensions and validation
-    // layers to use.
+    // CreateInfo struct tells the Vulkan driver which global extensions
+	// and validation layers to use.
     VkInstanceCreateInfo createInfo =
         {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
 
@@ -102,7 +102,7 @@ b8 vulkan_initialize(
     device_requirements.sampler_anisotropy = TRUE;
     device_requirements.graphics = TRUE;
     device_requirements.transfer = TRUE;
-    device_requirements.present = FALSE; // TODO: Setup present queue lookup
+    device_requirements.present = TRUE; 
     device_requirements.discrete_gpu = TRUE;
     device_requirements.device_extension_names = &extension_requirements;
 
@@ -121,6 +121,11 @@ b8 vulkan_initialize(
         return FALSE;
     }
 
+    if (!vulkan_swapchain_create(&context, 1280, 720, &context.swapchain)) {
+        ENGINE_FATAL("Failed to create Vulkan swapchain. Aborting...");
+        return FALSE;
+    }
+
     ENGINE_INFO("Vulkan backend initialized");
 
     extension_requirements.free();
@@ -128,7 +133,12 @@ b8 vulkan_initialize(
     return TRUE;
 }
 
-void vulkan_shutdown(Renderer_Backend* backend) {
+void vulkan_shutdown(
+    Renderer_Backend* backend) {
+
+	vulkan_swapchain_shutdown(
+		&context, 
+		&context.swapchain);
 
     vulkan_device_shutdown(&context);
 
@@ -141,11 +151,14 @@ void vulkan_shutdown(Renderer_Backend* backend) {
     ENGINE_DEBUG("Destroying Vulkan debugger...");
     if (context.debug_messenger) {
 
-        VK_INSTANCE_LEVEL_FUNCTION(context.instance, vkDestroyDebugUtilsMessengerEXT);
+        VK_INSTANCE_LEVEL_FUNCTION(
+            context.instance,
+            vkDestroyDebugUtilsMessengerEXT);
 
-        vkDestroyDebugUtilsMessengerEXT(context.instance,
-                                        context.debug_messenger,
-                                        context.allocator);
+        vkDestroyDebugUtilsMessengerEXT(
+            context.instance,
+            context.debug_messenger,
+            context.allocator);
     }
 #endif
 
@@ -156,18 +169,23 @@ void vulkan_shutdown(Renderer_Backend* backend) {
     ENGINE_DEBUG("Vulkan renderer shut down");
 }
 
-void vulkan_on_resized(Renderer_Backend* backend,
-                       u16 width,
-                       u16 height) {
+void vulkan_on_resized(
+    Renderer_Backend* backend,
+    u16 width,
+    u16 height) {
 }
 
-b8 vulkan_begin_frame(Renderer_Backend* backend,
-                      f32 delta_t) {
+b8 vulkan_begin_frame(
+    Renderer_Backend* backend,
+    f32 delta_t) {
+
     return TRUE;
 }
 
-b8 vulkan_end_frame(Renderer_Backend* backend,
-                    f32 delta_t) {
+b8 vulkan_end_frame(
+    Renderer_Backend* backend,
+    f32 delta_t) {
+
     return TRUE;
 }
 
@@ -244,7 +262,10 @@ b8 vulkan_create_debug_logger(VkInstance* instance) {
         VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
 
     debug_create_info.pfnUserCallback = vk_debug_callback;
-    debug_create_info.pUserData = nullptr; // Optional pointer that can be passed to the logger
+
+    // Optional pointer that can be passed to the logger. Essentially we can
+    // pass whatever data we want and use it in the callback function. Not used
+    debug_create_info.pUserData = nullptr;
 
     // The vkCreateDebugUtilsMessengerEXT is an extension function so it is not
     // loaded automatically. Its address must be looked up manually

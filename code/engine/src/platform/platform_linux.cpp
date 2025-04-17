@@ -203,7 +203,6 @@ b8 platform_message_pump(Platform_State* plat_state) {
                 break;
             }
 
-            // TODO: Define a standard for the key modifiers
             input_process_key(
                 key,
                 modifiers,

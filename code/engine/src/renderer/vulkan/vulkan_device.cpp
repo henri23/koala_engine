@@ -193,7 +193,7 @@ b8 create_logical_device(Vulkan_Context* context) {
     if (!does_present_share_queue)
         queue_family_indeces[2] = context->device.present_queue_index;
 
-	// Information for the queues that we want to request
+    // Information for the queues that we want to request
     VkDeviceQueueCreateInfo
         queue_create_infos[distinct_queue_family_indices_count];
 
@@ -239,7 +239,7 @@ b8 create_logical_device(Vulkan_Context* context) {
 
     ENGINE_INFO("Logical device created.");
 
-	// Get handles for all requested queues
+    // Get handles for all requested queues
     vkGetDeviceQueue(context->device.logical_device,
                      context->device.graphics_queue_index, 0,
                      &context->device.graphics_queue);
@@ -259,8 +259,9 @@ b8 create_logical_device(Vulkan_Context* context) {
 
 // TODO: 	For now the algorithm just checks if the current GPU fullfills
 // 			the requirements, and if so it breaks, so if there are
-// mulitple 			GPUs that can fulfill those requirements, the
-// first one gets 			selected, not necessarily the best
+// 			mulitple GPUs that can fulfill those requirements, the
+// 			first one gets selected, not necessarily the best
+
 b8 is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface,
                       const VkPhysicalDeviceProperties* properties,
                       const VkPhysicalDeviceFeatures* features,
@@ -425,18 +426,17 @@ b8 is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface,
                 for (u32 j = 0; j < available_extensions_count; ++j) {
                     if (string_check_equal(
                             extension_properties[j].extensionName,
-                            requirements->device_extension_names->data[i]) ==
-                        0) {
+                            requirements->device_extension_names->data[i]) == 0) {
                         found = TRUE;
                         break;
                     }
                 }
 
                 if (!found) {
-                    ENGINE_INFO("Required extension not found: '%s', skipping "
-                                "device '%s'",
-                                requirements->device_extension_names->data[i],
-                                properties->deviceName);
+                    ENGINE_INFO(
+                        "Required extension not found: '%s', skipping device '%s'",
+                        requirements->device_extension_names->data[i],
+                        properties->deviceName);
 
                     return FALSE;
                 }
