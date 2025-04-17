@@ -1,11 +1,11 @@
+#include "core/asserts.hpp"
+#include "core/logger.hpp"
+#include "core/string.hpp"
+
 #include "renderer/renderer_types.inl"
 #include "renderer/vulkan/vulkan_device.hpp"
 #include "renderer/vulkan/vulkan_platform.hpp"
 #include "vulkan_types.hpp"
-
-#include "core/asserts.hpp"
-#include "core/logger.hpp"
-#include "core/string.hpp"
 
 #include "containers/auto_array.hpp"
 
@@ -115,7 +115,7 @@ b8 vulkan_initialize(
         return FALSE;
     }
 
-	// Select physical device and create logical device
+    // Select physical device and create logical device
     if (!vulkan_device_initialize(&context, &device_requirements)) {
         ENGINE_FATAL("No device that fulfills all the requirements was found in the machine");
         return FALSE;
@@ -130,7 +130,7 @@ b8 vulkan_initialize(
 
 void vulkan_shutdown(Renderer_Backend* backend) {
 
-	vulkan_device_shutdown(&context);
+    vulkan_device_shutdown(&context);
 
     vkDestroySurfaceKHR(
         context.instance,
@@ -140,14 +140,12 @@ void vulkan_shutdown(Renderer_Backend* backend) {
 #ifdef DEBUG_BUILD
     ENGINE_DEBUG("Destroying Vulkan debugger...");
     if (context.debug_messenger) {
-        PFN_vkDestroyDebugUtilsMessengerEXT func =
-            (PFN_vkDestroyDebugUtilsMessengerEXT)
-                vkGetInstanceProcAddr(context.instance,
-                                      "vkDestroyDebugUtilsMessengerEXT");
 
-        func(context.instance,
-             context.debug_messenger,
-             context.allocator);
+        VK_INSTANCE_LEVEL_FUNCTION(context.instance, vkDestroyDebugUtilsMessengerEXT);
+
+        vkDestroyDebugUtilsMessengerEXT(context.instance,
+                                        context.debug_messenger,
+                                        context.allocator);
     }
 #endif
 
@@ -250,18 +248,13 @@ b8 vulkan_create_debug_logger(VkInstance* instance) {
 
     // The vkCreateDebugUtilsMessengerEXT is an extension function so it is not
     // loaded automatically. Its address must be looked up manually
-    PFN_vkCreateDebugUtilsMessengerEXT func =
-        (PFN_vkCreateDebugUtilsMessengerEXT)
-            vkGetInstanceProcAddr(*instance,
-                                  "vkCreateDebugUtilsMessengerEXT");
-
-    RUNTIME_ASSERT_MSG(func, "Failed to create debug messenger");
+    VK_INSTANCE_LEVEL_FUNCTION(*instance, vkCreateDebugUtilsMessengerEXT);
 
     VK_ENSURE_SUCCESS(
-        func(*instance, // Pass instance because debugger is specific for inst.
-             &debug_create_info,
-             context.allocator,
-             &context.debug_messenger));
+        vkCreateDebugUtilsMessengerEXT(*instance,
+                                       &debug_create_info,
+                                       context.allocator,
+                                       &context.debug_messenger));
 
     ENGINE_DEBUG("Vulkan debugger created");
     return TRUE;
