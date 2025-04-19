@@ -69,6 +69,9 @@ struct Vulkan_Context {
     VkAllocationCallbacks* allocator;
     VkPhysicalDevice physical_device; // Implicitly destroyed destroying VkInstance
 
+	u32 framebuffer_width;
+	u32 framebuffer_height;
+
 #ifdef DEBUG_BUILD
     VkDebugUtilsMessengerEXT debug_messenger;
 #endif

@@ -3,8 +3,10 @@
 #include "core/logger.hpp"
 #include "core/memory.hpp"
 
+#include "defines.hpp"
 #include "renderer/vulkan/vulkan_device.hpp"
 #include "renderer/vulkan/vulkan_types.hpp"
+#include <vulkan/vulkan_core.h>
 
 void create_swapchain(
     Vulkan_Context* context,
@@ -258,6 +260,66 @@ void vulkan_swapchain_recreate(
         width,
         height,
         out_swapchain);
+}
+
+void vulkan_swapchain_present(
+    Vulkan_Context* context,
+    VkQueue graphics_queue,
+    VkQueue present_queue,
+    VkSemaphore render_complete_semaphore,
+    u32 present_image_index) {
+
+    VkPresentInfoKHR present_info = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores = &render_complete_semaphore;
+    present_info.swapchainCount = 1;
+    present_info.pSwapchains = &context->swapchain.handle;
+    present_info.pImageIndices = &present_image_index;
+    present_info.pResults = 0;
+
+    VkResult result = vkQueuePresentKHR(present_queue, &present_info);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        vulkan_swapchain_recreate(
+            context,
+            context->framebuffer_width,
+            context->framebuffer_height,
+            &context->swapchain);
+
+    } else if (result != VK_SUCCESS) {
+        ENGINE_FATAL("Failed to present swap chain image!");
+    }
+}
+
+b8 vulkan_swapchain_get_next_image_index(
+    Vulkan_Context* context,
+    u64 timeout_ns,
+    VkSemaphore image_available_semaphore,
+    VkFence fence,
+    u32* out_image_index) {
+
+    VkResult result = vkAcquireNextImageKHR(
+        context->device.logical_device,
+        context->swapchain.handle,
+        timeout_ns,
+        image_available_semaphore,
+        fence,
+        out_image_index);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        vulkan_swapchain_recreate(
+            context,
+            context->framebuffer_width,
+            context->framebuffer_height,
+            &context->swapchain);
+
+        return FALSE;
+
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        ENGINE_FATAL("Failed to acquire swapchain iamge!");
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 void vulkan_swapchain_destroy(
