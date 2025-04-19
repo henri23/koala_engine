@@ -14,24 +14,25 @@ struct Device_Queue_Indices {
     u32 compute_family_index;
 };
 
-b8 is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface,
-                      const VkPhysicalDeviceProperties* properties,
-                      const VkPhysicalDeviceFeatures* features,
-                      const Vulkan_Physical_Device_Requirements* requirements,
-                      Vulkan_Swapchain_Support_Info* out_swapchain_info,
-                      Device_Queue_Indices* out_indices);
+b8 is_device_suitable(
+    VkPhysicalDevice device,
+    VkSurfaceKHR surface,
+    const VkPhysicalDeviceProperties* properties,
+    const VkPhysicalDeviceFeatures* features,
+    const Vulkan_Physical_Device_Requirements* requirements,
+    Vulkan_Swapchain_Support_Info* out_swapchain_info,
+    Device_Queue_Indices* out_indices);
 
-b8 select_physical_device(Vulkan_Context* context,
-                          Vulkan_Physical_Device_Requirements* requirements);
+b8 select_physical_device(
+    Vulkan_Context* context,
+    Vulkan_Physical_Device_Requirements* requirements);
 
-b8 create_logical_device(Vulkan_Context* context);
+b8 create_logical_device(
+    Vulkan_Context* context);
 
-void vulkan_device_query_swapchain_capabilities(
-    VkPhysicalDevice device, VkSurfaceKHR surface,
-    Vulkan_Swapchain_Support_Info* out_swapchain_info);
-
-b8 vulkan_device_initialize(Vulkan_Context* context,
-                            Vulkan_Physical_Device_Requirements* requirements) {
+b8 vulkan_device_initialize(
+    Vulkan_Context* context,
+    Vulkan_Physical_Device_Requirements* requirements) {
 
     // Select physical device in the machine
     if (!select_physical_device(context, requirements)) {
@@ -39,14 +40,44 @@ b8 vulkan_device_initialize(Vulkan_Context* context,
         return FALSE;
     }
 
+    // Create logical device
     if (!create_logical_device(context)) {
         ENGINE_FATAL("Failed to create logical device. Aborting...");
         return FALSE;
     }
 
-    // Create logical device
-
     return TRUE;
+}
+
+b8 vulkan_device_detect_depth_format(Vulkan_Device* device) {
+
+    const u64 candidate_count = 3;
+    VkFormat candidates[3]{
+        VK_FORMAT_D32_SFLOAT, // 32-bit signaed float, 32 bits depth component
+        VK_FORMAT_D32_SFLOAT_S8_UINT, // Two components, 32 bit depth, 8 bit stencil
+        VK_FORMAT_D24_UNORM_S8_UINT}; //
+
+    // In this case the depth and stencil buffer are merged into one buffer
+    u32 flags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    for (u32 i = 0; i < candidate_count; ++i) {
+        VkFormatProperties properties;
+        vkGetPhysicalDeviceFormatProperties(
+            device->physical_device,
+            candidates[i],
+            &properties);
+
+        if ((properties.linearTilingFeatures & flags) == flags) {
+            device->depth_format = candidates[i];
+            return TRUE;
+        }
+
+        if ((properties.optimalTilingFeatures & flags) == flags) {
+            device->depth_format = candidates[i];
+            return TRUE;
+        }
+    }
+
+    return FALSE;
 }
 
 b8 select_physical_device(Vulkan_Context* context,
@@ -262,12 +293,13 @@ b8 create_logical_device(Vulkan_Context* context) {
 // 			mulitple GPUs that can fulfill those requirements, the
 // 			first one gets selected, not necessarily the best
 
-b8 is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface,
-                      const VkPhysicalDeviceProperties* properties,
-                      const VkPhysicalDeviceFeatures* features,
-                      const Vulkan_Physical_Device_Requirements* requirements,
-                      Vulkan_Swapchain_Support_Info* out_swapchain_info,
-                      Device_Queue_Indices* out_indices) {
+b8 is_device_suitable(
+    VkPhysicalDevice device, VkSurfaceKHR surface,
+    const VkPhysicalDeviceProperties* properties,
+    const VkPhysicalDeviceFeatures* features,
+    const Vulkan_Physical_Device_Requirements* requirements,
+    Vulkan_Swapchain_Support_Info* out_swapchain_info,
+    Device_Queue_Indices* out_indices) {
 
     // Initialize the family index to a unreasonable value so that it is
     // evident whether or not a queue family that supports given commands
@@ -283,7 +315,10 @@ b8 is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface,
         &queue_family_count,
         nullptr);
 
-    VkQueueFamilyProperties queue_family_array[queue_family_count];
+    auto queue_family_array = static_cast<VkQueueFamilyProperties*>(
+        memory_allocate(
+            sizeof(VkQueueFamilyProperties) * queue_family_count,
+            Memory_Tag::RENDERER));
 
     vkGetPhysicalDeviceQueueFamilyProperties(
         device,
@@ -345,6 +380,11 @@ b8 is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface,
             out_indices->present_family_index = i;
         }
     }
+
+    memory_deallocate(
+        queue_family_array,
+        sizeof(VkQueueFamilyProperties) * queue_family_count,
+        Memory_Tag::RENDERER);
 
     ENGINE_INFO("       %d |       %d |       %d |        %d | %s",
                 out_indices->graphics_family_index,
@@ -411,16 +451,17 @@ b8 is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface,
             VK_ENSURE_SUCCESS(vkEnumerateDeviceExtensionProperties(
                 device, nullptr, &available_extensions_count, nullptr));
 
-            // TODO : allocate in HEAP
-            VkExtensionProperties
-                extension_properties[available_extensions_count];
+            // Allocate in heap because the data turned out to be large
+            auto extension_properties = static_cast<VkExtensionProperties*>(
+                memory_allocate(
+                    sizeof(VkExtensionProperties) * available_extensions_count,
+                    Memory_Tag::RENDERER));
 
             VK_ENSURE_SUCCESS(vkEnumerateDeviceExtensionProperties(
                 device, nullptr, &available_extensions_count,
                 extension_properties));
 
-            for (u32 i = 0; i < requirements->device_extension_names->length;
-                 ++i) {
+            for (u32 i = 0; i < requirements->device_extension_names->length; ++i) {
                 b8 found = FALSE;
 
                 for (u32 j = 0; j < available_extensions_count; ++j) {
@@ -438,9 +479,19 @@ b8 is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface,
                         requirements->device_extension_names->data[i],
                         properties->deviceName);
 
+                    memory_deallocate(
+                        extension_properties,
+                        sizeof(VkExtensionProperties) * available_extensions_count,
+                        Memory_Tag::RENDERER);
+
                     return FALSE;
                 }
             }
+
+            memory_deallocate(
+                extension_properties,
+                sizeof(VkExtensionProperties) * available_extensions_count,
+                Memory_Tag::RENDERER);
         }
 
         return TRUE;
@@ -489,6 +540,11 @@ void vulkan_device_query_swapchain_capabilities(
             device, surface, &present_modes_count,
             out_swapchain_info->present_modes));
     }
+
+	ENGINE_DEBUG("Supported present modes");
+	for(u32 i = 0; i < present_modes_count; ++i){
+		ENGINE_DEBUG("%d", out_swapchain_info->present_modes[i]);
+	}
 }
 
 void vulkan_device_shutdown(Vulkan_Context* context) {
@@ -500,10 +556,11 @@ void vulkan_device_shutdown(Vulkan_Context* context) {
     }
 
     if (context->device.swapchain_info.formats) {
-        memory_deallocate(context->device.swapchain_info.formats,
-                          sizeof(VkSurfaceFormatKHR) *
-                              context->device.swapchain_info.formats_count,
-                          Memory_Tag::RENDERER);
+        memory_deallocate(
+            context->device.swapchain_info.formats,
+            sizeof(VkSurfaceFormatKHR) *
+                context->device.swapchain_info.formats_count,
+            Memory_Tag::RENDERER);
 
         context->device.swapchain_info.formats = nullptr;
         context->device.swapchain_info.formats_count = 0;

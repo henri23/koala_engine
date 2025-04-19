@@ -44,7 +44,7 @@ b8 vulkan_initialize(
     app_info.apiVersion = VK_API_VERSION_1_0;
 
     // CreateInfo struct tells the Vulkan driver which global extensions
-	// and validation layers to use.
+    // and validation layers to use.
     VkInstanceCreateInfo createInfo =
         {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
 
@@ -102,7 +102,7 @@ b8 vulkan_initialize(
     device_requirements.sampler_anisotropy = TRUE;
     device_requirements.graphics = TRUE;
     device_requirements.transfer = TRUE;
-    device_requirements.present = TRUE; 
+    device_requirements.present = TRUE;
     device_requirements.discrete_gpu = TRUE;
     device_requirements.device_extension_names = &extension_requirements;
 
@@ -121,10 +121,11 @@ b8 vulkan_initialize(
         return FALSE;
     }
 
-    if (!vulkan_swapchain_create(&context, 1280, 720, &context.swapchain)) {
-        ENGINE_FATAL("Failed to create Vulkan swapchain. Aborting...");
-        return FALSE;
-    }
+    vulkan_swapchain_create(
+        &context,
+        1280,
+        720,
+        &context.swapchain);
 
     ENGINE_INFO("Vulkan backend initialized");
 
@@ -136,9 +137,9 @@ b8 vulkan_initialize(
 void vulkan_shutdown(
     Renderer_Backend* backend) {
 
-	vulkan_swapchain_shutdown(
-		&context, 
-		&context.swapchain);
+    vulkan_swapchain_destroy(
+        &context,
+        &context.swapchain);
 
     vulkan_device_shutdown(&context);
 

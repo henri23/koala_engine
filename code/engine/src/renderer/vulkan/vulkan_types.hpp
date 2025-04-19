@@ -34,15 +34,33 @@ struct Vulkan_Device {
     VkPhysicalDeviceMemoryProperties physical_device_memory;
 
     Vulkan_Swapchain_Support_Info swapchain_info;
+
+	VkFormat depth_format;
+
     // Queue handles
     VkQueue presentation_queue;
     VkQueue graphics_queue;
     VkQueue transfer_queue;
 };
 
+struct Vulkan_Image {
+	VkImage handle;
+	VkImageView view;
+	VkDeviceMemory memory; // Handle to the memory allocated by the image
+	u32 width;
+	u32 height;
+};
+
 struct Vulkan_Swapchain {
 	VkSwapchainKHR handle;
+	u32 max_frames_in_process;
 
+	u32 image_count;
+	VkImage* images; // array of VkImages. Automatically created and cleaned
+	VkImageView* views; // struct that lets us access the images
+
+	VkSurfaceFormatKHR image_format;
+	VkExtent2D extent;
 };
 
 struct Vulkan_Context {
@@ -54,6 +72,8 @@ struct Vulkan_Context {
 #ifdef DEBUG_BUILD
     VkDebugUtilsMessengerEXT debug_messenger;
 #endif
+
+	u64 current_frame;
 
 	Vulkan_Swapchain swapchain;
     Vulkan_Device device;
