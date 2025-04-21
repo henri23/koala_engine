@@ -54,7 +54,7 @@ b8 vulkan_device_detect_depth_format(Vulkan_Device* device) {
 
     const u64 candidate_count = 3;
     VkFormat candidates[3]{
-        VK_FORMAT_D32_SFLOAT, // 32-bit signaed float, 32 bits depth component
+        VK_FORMAT_D32_SFLOAT,         // 32-bit signaed float, 32 bits depth component
         VK_FORMAT_D32_SFLOAT_S8_UINT, // Two components, 32 bit depth, 8 bit stencil
         VK_FORMAT_D24_UNORM_S8_UINT}; //
 
@@ -93,12 +93,12 @@ b8 select_physical_device(Vulkan_Context* context,
     if (physical_device_count == 0)
         return FALSE;
 
-	// C++ compiler (in windows) does not allow for variable length arrays
-	// Allocate in heap and then deallocate to keep the compiler happy
+    // C++ compiler (in windows) does not allow for variable length arrays
+    // Allocate in heap and then deallocate to keep the compiler happy
     // VkPhysicalDevice physical_devices_array[physical_device_count];
 
-	Auto_Array<VkPhysicalDevice> physical_devices_array;
-	physical_devices_array.reserve(physical_device_count);
+    Auto_Array<VkPhysicalDevice> physical_devices_array;
+    physical_devices_array.reserve(physical_device_count);
 
     vkEnumeratePhysicalDevices(context->instance, &physical_device_count,
                                physical_devices_array.data);
@@ -195,7 +195,7 @@ b8 select_physical_device(Vulkan_Context* context,
         }
     }
 
-	physical_devices_array.free();
+    physical_devices_array.free();
 
     if (context->device.physical_device) {
         return TRUE;
@@ -223,8 +223,8 @@ b8 create_logical_device(Vulkan_Context* context) {
         distinct_queue_family_indices_count++;
 
     // u32 queue_family_indeces[distinct_queue_family_indices_count];
-	Auto_Array<u32> queue_family_indices;
-	queue_family_indices.reserve(distinct_queue_family_indices_count);
+    Auto_Array<u32> queue_family_indices;
+    queue_family_indices.reserve(distinct_queue_family_indices_count);
 
     queue_family_indices[0] = context->device.graphics_queue_index;
 
@@ -237,9 +237,9 @@ b8 create_logical_device(Vulkan_Context* context) {
     // Information for the queues that we want to request
     // VkDeviceQueueCreateInfo
     //     queue_create_infos[distinct_queue_family_indices_count];
-	
-	Auto_Array<VkDeviceQueueCreateInfo> queue_create_infos;
-	queue_create_infos.reserve(distinct_queue_family_indices_count);
+
+    Auto_Array<VkDeviceQueueCreateInfo> queue_create_infos;
+    queue_create_infos.reserve(distinct_queue_family_indices_count);
 
     u32 max_queue_count = 2;
 
@@ -297,8 +297,8 @@ b8 create_logical_device(Vulkan_Context* context) {
                      &context->device.presentation_queue);
 
     ENGINE_INFO("Queues obtained");
-	queue_family_indices.free();
-	queue_create_infos.free();
+    queue_family_indices.free();
+    queue_create_infos.free();
 
     return TRUE;
 }
@@ -515,6 +515,9 @@ b8 is_device_suitable(
     return FALSE;
 }
 
+// This function could be called multiple times, but the memory is freed only
+// once during shutdown so we must be careful not to allocate again the memory
+// that is already allocated
 void vulkan_device_query_swapchain_capabilities(
     VkPhysicalDevice device, VkSurfaceKHR surface,
     Vulkan_Swapchain_Support_Info* out_swapchain_info) {
@@ -525,41 +528,46 @@ void vulkan_device_query_swapchain_capabilities(
     VK_ENSURE_SUCCESS(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
         device, surface, &out_swapchain_info->capabilities));
 
-    u32 format_count;
     VK_ENSURE_SUCCESS(vkGetPhysicalDeviceSurfaceFormatsKHR(
-        device, surface, &format_count, nullptr));
+        device, surface, &out_swapchain_info->formats_count, nullptr));
 
-    if (format_count != 0) {
-        out_swapchain_info->formats_count = format_count;
+    if (out_swapchain_info->formats_count != 0) {
 
-        out_swapchain_info->formats = static_cast<VkSurfaceFormatKHR*>(
-            memory_allocate(sizeof(VkSurfaceFormatKHR) * format_count,
-                            Memory_Tag::RENDERER));
+        if (!out_swapchain_info->formats) {
 
-        VK_ENSURE_SUCCESS(vkGetPhysicalDeviceSurfaceFormatsKHR(
-            device, surface, &format_count, out_swapchain_info->formats));
+            out_swapchain_info->formats = static_cast<VkSurfaceFormatKHR*>(
+                memory_allocate(
+                    sizeof(VkSurfaceFormatKHR) * out_swapchain_info->formats_count,
+                    Memory_Tag::RENDERER));
+        }
+
+        VK_ENSURE_SUCCESS(
+            vkGetPhysicalDeviceSurfaceFormatsKHR(
+                device,
+                surface,
+                &out_swapchain_info->formats_count,
+                out_swapchain_info->formats));
     }
 
-    u32 present_modes_count;
     VK_ENSURE_SUCCESS(vkGetPhysicalDeviceSurfacePresentModesKHR(
-        device, surface, &present_modes_count, nullptr));
+        device, surface, &out_swapchain_info->present_modes_count, nullptr));
 
-    if (present_modes_count != 0) {
-        out_swapchain_info->present_modes_count = present_modes_count;
+    if (out_swapchain_info->present_modes_count != 0) {
 
-        out_swapchain_info->present_modes = static_cast<VkPresentModeKHR*>(
-            memory_allocate(sizeof(VkPresentModeKHR) * present_modes_count,
-                            Memory_Tag::RENDERER));
+        if (!out_swapchain_info->present_modes) {
+            out_swapchain_info->present_modes = static_cast<VkPresentModeKHR*>(
+                memory_allocate(
+                    sizeof(VkPresentModeKHR) * out_swapchain_info->present_modes_count,
+                    Memory_Tag::RENDERER));
+        }
 
-        VK_ENSURE_SUCCESS(vkGetPhysicalDeviceSurfacePresentModesKHR(
-            device, surface, &present_modes_count,
-            out_swapchain_info->present_modes));
+        VK_ENSURE_SUCCESS(
+            vkGetPhysicalDeviceSurfacePresentModesKHR(
+                device,
+                surface,
+                &out_swapchain_info->present_modes_count,
+                out_swapchain_info->present_modes));
     }
-
-	ENGINE_DEBUG("Supported present modes");
-	for(u32 i = 0; i < present_modes_count; ++i){
-		ENGINE_DEBUG("%d", out_swapchain_info->present_modes[i]);
-	}
 }
 
 void vulkan_device_shutdown(Vulkan_Context* context) {
