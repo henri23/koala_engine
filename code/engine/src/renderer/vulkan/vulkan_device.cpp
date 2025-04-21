@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include "containers/auto_array.hpp"
 #include "core/logger.hpp"
 #include "core/memory.hpp"
 #include "core/string.hpp"
@@ -92,10 +93,15 @@ b8 select_physical_device(Vulkan_Context* context,
     if (physical_device_count == 0)
         return FALSE;
 
-    VkPhysicalDevice physical_devices_array[physical_device_count];
+	// C++ compiler (in windows) does not allow for variable length arrays
+	// Allocate in heap and then deallocate to keep the compiler happy
+    // VkPhysicalDevice physical_devices_array[physical_device_count];
+
+	Auto_Array<VkPhysicalDevice> physical_devices_array;
+	physical_devices_array.reserve(physical_device_count);
 
     vkEnumeratePhysicalDevices(context->instance, &physical_device_count,
-                               physical_devices_array);
+                               physical_devices_array.data);
 
     // Evaluate GPUs -> If mutliple GPUs are present in the machine,
     // we need to pick the most "qualified" one
@@ -189,6 +195,8 @@ b8 select_physical_device(Vulkan_Context* context,
         }
     }
 
+	physical_devices_array.free();
+
     if (context->device.physical_device) {
         return TRUE;
     }
@@ -214,19 +222,24 @@ b8 create_logical_device(Vulkan_Context* context) {
     if (!does_present_share_queue)
         distinct_queue_family_indices_count++;
 
-    u32 queue_family_indeces[distinct_queue_family_indices_count];
+    // u32 queue_family_indeces[distinct_queue_family_indices_count];
+	Auto_Array<u32> queue_family_indices;
+	queue_family_indices.reserve(distinct_queue_family_indices_count);
 
-    queue_family_indeces[0] = context->device.graphics_queue_index;
+    queue_family_indices[0] = context->device.graphics_queue_index;
 
     if (!does_transfer_share_queue)
-        queue_family_indeces[1] = context->device.transfer_queue_index;
+        queue_family_indices[1] = context->device.transfer_queue_index;
 
     if (!does_present_share_queue)
-        queue_family_indeces[2] = context->device.present_queue_index;
+        queue_family_indices[2] = context->device.present_queue_index;
 
     // Information for the queues that we want to request
-    VkDeviceQueueCreateInfo
-        queue_create_infos[distinct_queue_family_indices_count];
+    // VkDeviceQueueCreateInfo
+    //     queue_create_infos[distinct_queue_family_indices_count];
+	
+	Auto_Array<VkDeviceQueueCreateInfo> queue_create_infos;
+	queue_create_infos.reserve(distinct_queue_family_indices_count);
 
     u32 max_queue_count = 2;
 
@@ -234,7 +247,7 @@ b8 create_logical_device(Vulkan_Context* context) {
     for (u32 i = 0; i < distinct_queue_family_indices_count; ++i) {
         queue_create_infos[i].sType =
             VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queue_create_infos[i].queueFamilyIndex = queue_family_indeces[i];
+        queue_create_infos[i].queueFamilyIndex = queue_family_indices[i];
 
         // If we are on the graphics queue, instantiate 2 queues
         queue_create_infos[i].queueCount = (i == 0) ? 2 : 1;
@@ -250,7 +263,7 @@ b8 create_logical_device(Vulkan_Context* context) {
     VkDeviceCreateInfo logical_device_create_info = {
         VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
 
-    logical_device_create_info.pQueueCreateInfos = queue_create_infos;
+    logical_device_create_info.pQueueCreateInfos = queue_create_infos.data;
     logical_device_create_info.queueCreateInfoCount =
         distinct_queue_family_indices_count;
     logical_device_create_info.pEnabledFeatures = &device_features_to_request;
@@ -284,6 +297,8 @@ b8 create_logical_device(Vulkan_Context* context) {
                      &context->device.presentation_queue);
 
     ENGINE_INFO("Queues obtained");
+	queue_family_indices.free();
+	queue_create_infos.free();
 
     return TRUE;
 }
@@ -315,7 +330,7 @@ b8 is_device_suitable(
         &queue_family_count,
         nullptr);
 
-    auto queue_family_array = static_cast<VkQueueFamilyProperties*>(
+    auto queue_family_properties_array = static_cast<VkQueueFamilyProperties*>(
         memory_allocate(
             sizeof(VkQueueFamilyProperties) * queue_family_count,
             Memory_Tag::RENDERER));
@@ -323,7 +338,7 @@ b8 is_device_suitable(
     vkGetPhysicalDeviceQueueFamilyProperties(
         device,
         &queue_family_count,
-        queue_family_array);
+        queue_family_properties_array);
 
     if (requirements->discrete_gpu &&
         properties->deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
@@ -345,28 +360,28 @@ b8 is_device_suitable(
     for (u32 i = 0; i < queue_family_count; ++i) {
         u8 current_transfer_score = 0;
 
-        if (queue_family_array[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+        if (queue_family_properties_array[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             out_indices->graphics_family_index = i;
             ++current_transfer_score;
         }
 
-        if (queue_family_array[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
+        if (queue_family_properties_array[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
             out_indices->compute_family_index = i;
             ++current_transfer_score;
         }
 
-        if (queue_family_array[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)
+        if (queue_family_properties_array[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)
             ++current_transfer_score;
 
-        if (queue_family_array[i].queueFlags & VK_QUEUE_VIDEO_DECODE_BIT_KHR)
+        if (queue_family_properties_array[i].queueFlags & VK_QUEUE_VIDEO_DECODE_BIT_KHR)
             ++current_transfer_score;
 
-        if (queue_family_array[i].queueFlags & VK_QUEUE_VIDEO_ENCODE_BIT_KHR)
+        if (queue_family_properties_array[i].queueFlags & VK_QUEUE_VIDEO_ENCODE_BIT_KHR)
             ++current_transfer_score;
 
         // Mark this family as the go to transfer queue family only if it is
         // lower than the current minimum
-        if (queue_family_array[i].queueFlags & VK_QUEUE_TRANSFER_BIT &&
+        if (queue_family_properties_array[i].queueFlags & VK_QUEUE_TRANSFER_BIT &&
             current_transfer_score <= min_transfer_score) {
             out_indices->transfer_family_index = i;
             min_transfer_score = current_transfer_score;
@@ -382,7 +397,7 @@ b8 is_device_suitable(
     }
 
     memory_deallocate(
-        queue_family_array,
+        queue_family_properties_array,
         sizeof(VkQueueFamilyProperties) * queue_family_count,
         Memory_Tag::RENDERER);
 

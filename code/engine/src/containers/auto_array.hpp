@@ -39,6 +39,8 @@ struct KOALA_API Auto_Array {
             memory_allocate(
                 sizeof(T) * data_count,
                 Memory_Tag::DARRAY));
+
+		length = data_count;
     }
 
     void free() {

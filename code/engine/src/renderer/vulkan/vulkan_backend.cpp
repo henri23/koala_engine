@@ -207,11 +207,12 @@ b8 vulkan_enable_validation_layers(
         vkEnumerateInstanceLayerProperties(&available_layer_count,
                                            nullptr));
 
-    VkLayerProperties available_layers_array[available_layer_count];
+	Auto_Array<VkLayerProperties> available_layers_array;
+	available_layers_array.reserve(available_layer_count);
 
     VK_ENSURE_SUCCESS(
         vkEnumerateInstanceLayerProperties(&available_layer_count,
-                                           available_layers_array));
+                                           available_layers_array.data));
 
     // ENGINE_DEBUG("Available Vulkan layers:");
     // for (u32 i = 0; i < available_layer_count; ++i) {
@@ -239,6 +240,8 @@ b8 vulkan_enable_validation_layers(
             return FALSE;
         }
     }
+
+	available_layers_array.free();
 
     ENGINE_INFO("All required validaton layers are valid");
     return TRUE;
