@@ -28,9 +28,11 @@ As a starting point, I am following the architectural choices that Travis Vroman
 See [here](TODO.md).
 
 ### Prerequisites for Windows
-The engine supports two different build systems for Windows: ninja and clang (with MSVC). The ninja build requires that Visual Studio is installed and that cl.exe (the Microsoft compiler) is already setup. To do so the .bat file located "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" must be run before running build-ninja.bat.
+The engine supports two different build systems for Windows: ninja (using the Microsoft compiler MSVC) and Visual Studio (using LLVM clang frontend). 
 
-Instead for the clang build you must install clang from the official LLVM releases, and setup clang in your PATH during the installation. 
+The ninja build requires that Visual Studio is installed and that cl.exe (the Microsoft compiler) and its related environments variables are already setup. To do so, Visual Studio provides a premade .bat file located at "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat". Either run the build script from Developed Command Prompt for Visual Studio or run this batch file on the startup of a powershell terminal. This can be done in the $profile file of the powershell.
+
+Instead for the Visual Studio build you must install clang from the official LLVM releases, and setup the clang frontend in your PATH during the installation. 
 
 - CMake for Windows: `scoop install cmake` or `winget install -e --id Kitware.CMake` 
 - Visual Studio (preferrably the latest version): https://visualstudio.microsoft.com/vs/community/. Remember to select Desktop C++ Development during installation
