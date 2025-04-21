@@ -8,11 +8,7 @@ if not exist ../bin (
 )
 
 REM Run CMake configuration (assumes you're in project root)
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_CXX_COMPILER=clang++ -B ../bin -D CMAKE_BUILD_TYPE=Debug
-
-REM Link compile_commands.json (only works with symlinks enabled)
-if exist code\compile_commands.json del code\compile_commands.json
-mklink code\compile_commands.json bin\compile_commands.json
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER=clang++ -B../bin . -D CMAKE_BUILD_TYPE=Debug
 
 REM Build the project
 cmake --build ../bin
@@ -26,4 +22,10 @@ echo.
 echo [BUILDER]: Launching testbed...
 echo ==============================================
 
-start "" "C:\Users\henry\projects\koala_engine\bin\testbed\Debug\testbed.exe"
+REM Copy engine DLL to testbed's output directory
+copy /Y "..\bin\engine\Debug\koala_engine.dll" "..\bin\testbed\Debug\"
+
+cd ../bin/testbed/Debug/
+start "" "testbed.exe"
+
+
