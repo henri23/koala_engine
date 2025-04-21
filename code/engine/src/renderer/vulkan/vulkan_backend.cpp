@@ -305,6 +305,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
         ENGINE_TRACE(callback_data->pMessage);
         break;
     default:
+		break;
     }
     return VK_FALSE;
 }
