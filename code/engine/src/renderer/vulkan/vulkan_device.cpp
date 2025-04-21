@@ -1,7 +1,5 @@
 #include "vulkan_device.hpp"
 
-#include <vulkan/vulkan_core.h>
-
 #include "containers/auto_array.hpp"
 #include "core/logger.hpp"
 #include "core/memory.hpp"

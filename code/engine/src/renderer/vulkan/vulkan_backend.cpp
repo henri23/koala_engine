@@ -9,8 +9,6 @@
 
 #include "containers/auto_array.hpp"
 
-#include <vulkan/vulkan_core.h>
-
 internal Vulkan_Context context;
 
 // Forward declare messenger callback

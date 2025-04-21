@@ -6,7 +6,6 @@
 #include "defines.hpp"
 #include "renderer/vulkan/vulkan_device.hpp"
 #include "renderer/vulkan/vulkan_types.hpp"
-#include <vulkan/vulkan_core.h>
 
 void create_swapchain(
     Vulkan_Context* context,
@@ -150,7 +149,7 @@ void create_swapchain(
         context->allocator,
         &context->swapchain.handle))
 
-    ENGINE_INFO("Vulkan swapchain successfully created.");
+	ENGINE_DEBUG("Vulkan swapchain instance created");
 
     context->swapchain.extent = actual_extent;
 
@@ -217,12 +216,16 @@ void create_swapchain(
                 &context->swapchain.views[i]));
     }
 
+	ENGINE_DEBUG("Created images and image views for swapchain");
+
     // Create depth buffer. The depth buffer is an image cotaining the depth
     // from the camera point of view
     if (!vulkan_device_detect_depth_format(&context->device)) {
         context->device.depth_format = VK_FORMAT_UNDEFINED;
         ENGINE_FATAL("Failed to find a supported depth format!");
     }
+
+    ENGINE_INFO("Vulkan swapchain successfully created.");
 }
 
 void vulkan_swapchain_create(
