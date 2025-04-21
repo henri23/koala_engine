@@ -38,10 +38,10 @@ void log_output(Log_Scope scope, Log_Level level, const char* message, ...) {
     // NOTE:  MS's headers override the GCC/Clang va_list type with a "typedef char* va_list" in some cases, and as a
     //        result throws a strange error here. The workaround for now is to just use __builtin_va_list, which is the
     //        type GCC/Clang's va_start expects
-    __builtin_va_list arg_ptr; // Gives us a pointer to the variable argument array
-
+    va_list arg_ptr; // Pointer to args 
+    
     va_start(arg_ptr, message);
-    vsnprintf(out_message, msg_length, message, arg_ptr); // Formats the message string with the variable arguments
+    vsnprintf(out_message, msg_length, message, arg_ptr);
     va_end(arg_ptr);
 
     char prepended_message[msg_length];

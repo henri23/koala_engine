@@ -14,9 +14,9 @@ struct Application_Config {
     const char* name;
 };
 
-b8 application_initialize(Game* game_inst);
+KOALA_API b8 application_initialize(Game* game_inst);
 
-void application_run();
+KOALA_API void application_run();
 
 void application_shutdown();
 

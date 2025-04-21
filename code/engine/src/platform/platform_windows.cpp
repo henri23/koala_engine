@@ -1,19 +1,25 @@
 #include "platform/platform.hpp"
 
 // Windows platform layer.
-#if KPLATFORM_WINDOWS
+#if ENGINE_PLATFORM_WINDOWS
 
-#include "core/logger.h"
-#include "core/input.h"
+#include "core/logger.hpp"
+#include "core/input.hpp"
 
 #include <windows.h>
 #include <windowsx.h>  // param input extraction
 #include <stdlib.h>
 
-typedef struct internal_state {
+#include "containers/auto_array.hpp"
+
+#include "renderer/vulkan/vulkan_types.hpp"
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_win32.h>
+
+struct Internal_State {
     HINSTANCE h_instance;
     HWND hwnd;
-} internal_state;
+};
 
 // Clock
 static f64 clock_frequency;
@@ -22,14 +28,14 @@ static LARGE_INTEGER start_time;
 LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param);
 
 b8 platform_startup(
-    platform_state *plat_state,
+    Platform_State *plat_state,
     const char *application_name,
-    i32 x,
-    i32 y,
-    i32 width,
-    i32 height) {
-    plat_state->internal_state = malloc(sizeof(internal_state));
-    internal_state *state = (internal_state *)plat_state->internal_state;
+    s32 x,
+    s32 y,
+    s32 width,
+    s32 height) {
+    plat_state->internal_state = malloc(sizeof(Internal_State));
+    Internal_State *state = (Internal_State *)plat_state->internal_state;
 
     state->h_instance = GetModuleHandleA(0);
 
@@ -90,7 +96,7 @@ b8 platform_startup(
     if (handle == 0) {
         MessageBoxA(NULL, "Window creation failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
 
-        KFATAL("Window creation failed!");
+        ENGINE_FATAL("Window creation failed!");
         return FALSE;
     } else {
         state->hwnd = handle;
@@ -98,7 +104,7 @@ b8 platform_startup(
 
     // Show the window
     b32 should_activate = 1;  // TODO: if the window should not accept input, this should be false.
-    i32 show_window_command_flags = should_activate ? SW_SHOW : SW_SHOWNOACTIVATE;
+    s32 show_window_command_flags = should_activate ? SW_SHOW : SW_SHOWNOACTIVATE;
     // If initially minimized, use SW_MINIMIZE : SW_SHOWMINNOACTIVE;
     // If initially maximized, use SW_SHOWMAXIMIZED : SW_MAXIMIZE
     ShowWindow(state->hwnd, show_window_command_flags);
@@ -112,9 +118,9 @@ b8 platform_startup(
     return TRUE;
 }
 
-void platform_shutdown(platform_state *plat_state) {
+void platform_shutdown(Platform_State *plat_state) {
     // Simply cold-cast to the known type.
-    internal_state *state = (internal_state *)plat_state->internal_state;
+    Internal_State *state = (Internal_State *)plat_state->internal_state;
 
     if (state->hwnd) {
         DestroyWindow(state->hwnd);
@@ -122,7 +128,7 @@ void platform_shutdown(platform_state *plat_state) {
     }
 }
 
-b8 platform_pump_messages(platform_state *plat_state) {
+b8 platform_message_pump(Platform_State *plat_state) {
     MSG message;
     while (PeekMessageA(&message, NULL, 0, 0, PM_REMOVE)) {
         TranslateMessage(&message);
@@ -148,7 +154,11 @@ void *platform_copy_memory(void *dest, const void *source, u64 size) {
     return memcpy(dest, source, size);
 }
 
-void *platform_set_memory(void *dest, i32 value, u64 size) {
+void* platform_move_memory(void* dest, const void* source, u64 size) {
+    return memmove(dest, source, size);
+}
+
+void *platform_set_memory(void *dest, s32 value, u64 size) {
     return memset(dest, value, size);
 }
 
@@ -162,7 +172,28 @@ void platform_console_write(const char *message, u8 colour) {
     LPDWORD number_written = 0;
     WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD)length, number_written, 0);
 }
+// Vulkan platform specific definitions
+void platform_get_required_extensions(Auto_Array<const char*>* required_extensions) {
+    ENGINE_INFO("Attaching WIN32 surface for Windows platform");
+    required_extensions->add("VK_KHR_win32_surface");
+}
 
+b8 platform_create_vulkan_surface(Vulkan_Context* context, Platform_State* plat_state) {
+
+    ENGINE_INFO("Creating Vulkan WIN32 surface...");
+    Internal_State* state = static_cast<Internal_State*>(plat_state->internal_state);
+
+    VkWin32SurfaceCreateInfoKHR createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    createInfo.hwnd = state->hwnd;
+    createInfo.hinstance = state->h_instance;
+
+    VK_ENSURE_SUCCESS(vkCreateWin32SurfaceKHR(context->instance, &createInfo, nullptr, &context->surface));
+
+    ENGINE_INFO("Vulkan XCB surface created.");
+
+    return TRUE;
+}
 void platform_console_write_error(const char *message, u8 colour) {
     HANDLE console_handle = GetStdHandle(STD_ERROR_HANDLE);
     // FATAL,ERROR,WARN,INFO,DEBUG,TRACE
@@ -208,28 +239,13 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
         case WM_SYSKEYDOWN:
         case WM_KEYUP:
         case WM_SYSKEYUP: {
-            // Key pressed/released
-            b8 pressed = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
-            keys key = (u16)w_param;
 
-            // Pass to the input subsystem for processing.
-            input_process_key(key, pressed);
         } break;
         case WM_MOUSEMOVE: {
-            // Mouse move
-            i32 x_position = GET_X_LPARAM(l_param);
-            i32 y_position = GET_Y_LPARAM(l_param);
-            
-            // Pass over to the input subsystem.
-            input_process_mouse_move(x_position, y_position);
+
         } break;
         case WM_MOUSEWHEEL: {
-            i32 z_delta = GET_WHEEL_DELTA_WPARAM(w_param);
-            if (z_delta != 0) {
-                // Flatten the input to an OS-independent (-1, 1)
-                z_delta = (z_delta < 0) ? -1 : 1;
-                input_process_mouse_wheel(z_delta);
-            }
+
         } break;
         case WM_LBUTTONDOWN:
         case WM_MBUTTONDOWN:
@@ -237,27 +253,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
         case WM_LBUTTONUP:
         case WM_MBUTTONUP:
         case WM_RBUTTONUP: {
-            b8 pressed = msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN;
-            buttons mouse_button = BUTTON_MAX_BUTTONS;
-            switch (msg) {
-                case WM_LBUTTONDOWN:
-                case WM_LBUTTONUP:
-                    mouse_button = BUTTON_LEFT;
-                    break;
-                case WM_MBUTTONDOWN:
-                case WM_MBUTTONUP:
-                    mouse_button = BUTTON_MIDDLE;
-                    break;
-                case WM_RBUTTONDOWN:
-                case WM_RBUTTONUP:
-                    mouse_button = BUTTON_RIGHT;
-                    break;
-            }
 
-            // Pass over to the input subsystem.
-            if (mouse_button != BUTTON_MAX_BUTTONS) {
-                input_process_button(mouse_button, pressed);
-            }
         } break;
     }
 
@@ -265,3 +261,4 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
 }
 
 #endif  // KPLATFORM_WINDOWS
+

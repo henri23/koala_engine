@@ -6,7 +6,8 @@
 
 // Based on the platform the instruction that stops debugging will be different
 #if ENGINE_PLATFORM_WINDOWS
-#define debug_break() __debugBreak()
+#include <intrin.h>
+#define debug_break() __debugbreak()
 #else
 #define debug_break() __builtin_debugtrap()  // Stops the applicaiton in a way that the debugger can catch it
 #endif
