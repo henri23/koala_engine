@@ -8,6 +8,7 @@
 #include "vulkan_types.hpp"
 
 #include "containers/auto_array.hpp"
+#include <vulkan/vulkan_core.h>
 
 internal Vulkan_Context context;
 
@@ -24,15 +25,20 @@ b8 vulkan_create_debug_logger(
 b8 vulkan_enable_validation_layers(
     Auto_Array<const char*>* required_layers_array);
 
+s32 find_memory_index(u32 type_filter, u32 property_flags);
+
 b8 vulkan_initialize(
     Renderer_Backend* backend,
     const char* app_name,
     struct Platform_State* plat_state) {
 
+    // Function pointer assignment
+    context.find_memory_index = find_memory_index;
+
+    // TODO: Custom allocator with memory arenas (Ryan Fleury tutorial)
     context.allocator = nullptr;
 
-    VkApplicationInfo app_info =
-        {VK_STRUCTURE_TYPE_APPLICATION_INFO};
+    VkApplicationInfo app_info = {VK_STRUCTURE_TYPE_APPLICATION_INFO};
 
     app_info.pNext = nullptr;
     app_info.pApplicationName = app_name;
@@ -205,8 +211,8 @@ b8 vulkan_enable_validation_layers(
         vkEnumerateInstanceLayerProperties(&available_layer_count,
                                            nullptr));
 
-	Auto_Array<VkLayerProperties> available_layers_array;
-	available_layers_array.reserve(available_layer_count);
+    Auto_Array<VkLayerProperties> available_layers_array;
+    available_layers_array.reserve(available_layer_count);
 
     VK_ENSURE_SUCCESS(
         vkEnumerateInstanceLayerProperties(&available_layer_count,
@@ -239,7 +245,7 @@ b8 vulkan_enable_validation_layers(
         }
     }
 
-	available_layers_array.free();
+    available_layers_array.free();
 
     ENGINE_INFO("All required validaton layers are valid");
     return TRUE;
@@ -303,7 +309,31 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
         ENGINE_TRACE(callback_data->pMessage);
         break;
     default:
-		break;
+        break;
     }
     return VK_FALSE;
+}
+
+s32 find_memory_index(u32 type_filter, u32 property_flags) {
+
+    VkPhysicalDeviceMemoryProperties memory_properties;
+
+    vkGetPhysicalDeviceMemoryProperties(
+        context.device.physical_device,
+        &memory_properties);
+
+    for (u32 i = 0; i < memory_properties.memoryTypeCount; ++i) {
+        if (
+            // Check if memory type i is acceptable according to the type_filter
+            // we get from the memory requirements of the image.
+            type_filter & (1 << i) &&
+            // Check if the memory type i supports all required properties
+            // (flags)
+            (memory_properties.memoryTypes[i].propertyFlags & property_flags) == property_flags) {
+            return i;
+        }
+    }
+
+	ENGINE_WARN("Memory type not suitable");
+    return -1;
 }

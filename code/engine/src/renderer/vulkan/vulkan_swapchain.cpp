@@ -4,8 +4,11 @@
 #include "core/memory.hpp"
 
 #include "defines.hpp"
+
 #include "renderer/vulkan/vulkan_device.hpp"
+#include "renderer/vulkan/vulkan_image.hpp"
 #include "renderer/vulkan/vulkan_types.hpp"
+#include <vulkan/vulkan_core.h>
 
 void create_swapchain(
     Vulkan_Context* context,
@@ -19,8 +22,8 @@ void create_swapchain(
     // 3. Specify the extent of the image (size). This will be immutable so if
     // 	  the screen gets resized, the swapchain must be recreated with the new
     // 	  size
-
-    Vulkan_Swapchain_Support_Info* swapchain_info = &context->device.swapchain_info;
+    Vulkan_Swapchain_Support_Info* swapchain_info =
+        &context->device.swapchain_info;
 
     // Choose prefered format from available formats of the logical device
     // The formats and present modes array are setup on device selection in
@@ -149,7 +152,7 @@ void create_swapchain(
         context->allocator,
         &context->swapchain.handle))
 
-	ENGINE_DEBUG("Vulkan swapchain instance created");
+    ENGINE_DEBUG("Vulkan swapchain instance created");
 
     context->swapchain.extent = actual_extent;
 
@@ -216,14 +219,31 @@ void create_swapchain(
                 &context->swapchain.views[i]));
     }
 
-	ENGINE_DEBUG("Created images and image views for swapchain");
+    ENGINE_DEBUG("Created images and image views for swapchain");
 
     // Create depth buffer. The depth buffer is an image cotaining the depth
     // from the camera point of view
     if (!vulkan_device_detect_depth_format(&context->device)) {
         context->device.depth_format = VK_FORMAT_UNDEFINED;
+        // TODO: Make this error recoverable by chosing a different format
         ENGINE_FATAL("Failed to find a supported depth format!");
     }
+
+    // Create a depth image. The depth image is an image where the depth info
+    // is written too. However the swapchain does not create this image for us
+    // so it must be created manually
+    vulkan_image_create(
+        context,
+        VK_IMAGE_TYPE_2D,
+        actual_extent.width,
+        actual_extent.height,
+        context->device.depth_format, // Set above
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        TRUE,
+        VK_IMAGE_ASPECT_DEPTH_BIT,
+        &out_swapchain->depth_attachment);
 
     ENGINE_INFO("Vulkan swapchain successfully created.");
 }
@@ -329,9 +349,16 @@ void vulkan_swapchain_destroy(
     Vulkan_Context* context,
     Vulkan_Swapchain* swapchain) {
 
+	// Destroy the images that we create
+    vulkan_image_destroy(
+        context,
+        &swapchain->depth_attachment);
+
     ENGINE_DEBUG("Destroying image views... Found %d views",
                  context->swapchain.image_count);
 
+	// Only destroy the views, because the images of the swapchain are managed
+	// by Vulkan itself so there is no need to destroy them
     for (u32 i = 0; i < context->swapchain.image_count; ++i) {
         vkDestroyImageView(
             context->device.logical_device,

@@ -48,13 +48,14 @@ b8 vulkan_device_initialize(
     return TRUE;
 }
 
+// TODO: Get back to this method as it is not clear enough
 b8 vulkan_device_detect_depth_format(Vulkan_Device* device) {
 
     const u64 candidate_count = 3;
     VkFormat candidates[3]{
         VK_FORMAT_D32_SFLOAT,         // 32-bit signaed float, 32 bits depth component
         VK_FORMAT_D32_SFLOAT_S8_UINT, // Two components, 32 bit depth, 8 bit stencil
-        VK_FORMAT_D24_UNORM_S8_UINT}; //
+        VK_FORMAT_D24_UNORM_S8_UINT}; // Two components, 8 bit stencil, 24 depth
 
     // In this case the depth and stencil buffer are merged into one buffer
     u32 flags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;

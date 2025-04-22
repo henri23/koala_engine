@@ -60,6 +60,8 @@ struct Vulkan_Swapchain {
 
     VkSurfaceFormatKHR image_format;
     VkExtent2D extent;
+
+	Vulkan_Image depth_attachment;
 };
 
 struct Vulkan_Context {
@@ -79,6 +81,8 @@ struct Vulkan_Context {
 
     Vulkan_Swapchain swapchain;
     Vulkan_Device device;
+
+	s32 (*find_memory_index)(u32 type_filter, u32 property_flags);
 };
 
 struct Vulkan_Physical_Device_Requirements {

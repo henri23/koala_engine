@@ -40,7 +40,7 @@ struct KOALA_API Auto_Array {
                 sizeof(T) * data_count,
                 Memory_Tag::DARRAY));
 
-		length = data_count;
+        length = data_count;
     }
 
     void free() {
