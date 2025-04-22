@@ -28,15 +28,21 @@ As a starting point, I am following the architectural choices that Travis Vroman
 See [here](TODO.md).
 
 ### Prerequisites for Windows
+The engine supports two different build systems for Windows: ninja and clang (with MSVC). The ninja build requires that Visual Studio is installed and that cl.exe (the Microsoft compiler) is already setup. To do so the .bat file located "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" must be run before running build-ninja.bat.
 
-- CMake for Windows: `winget install -e --id Kitware.CMake` 
-- Visual Studio Build Tools: `winget install Microsoft.VisualStudio.2022.BuildTools`
-- Git for Windows: `winget install git.git` OR https://gitforwindows.org/
+Instead for the clang build you must install clang from the official LLVM releases, and setup clang in your PATH during the installation. 
+
+- CMake for Windows: `scoop install cmake` or `winget install -e --id Kitware.CMake` 
+- Visual Studio (preferrably the latest version): https://visualstudio.microsoft.com/vs/community/. Remember to select Desktop C++ Development during installation
+- Git for Windows: `scoop install git` or `winget install git.git` OR https://gitforwindows.org/
 - Vulkan SDK: `winget install khronosgroup.vulkansdk` OR download from https://vulkan.lunarg.com/
+- Ninja (only if you want to build with ninja): https://github.com/ninja-build/ninja/releases. Remember to add the path to the ninja.exe to your PATH
+
+ Ninja would be the method I recommend as it is the most similar to the linux build and it also creates the compile_commands.json file that allows you to edit your code with you code editor of choice, while the clang build offers intellisense only inside Visual Studio IDE. However it requires some extra steps, that is why both build systems are supported.
 
 ### Prerequisites for Linux
 
-Install these via package manager:
+As you can imagine, the linux setup is much faster from the standpoint of the libraries. You just need to install these via package manager:
 
 - `sudo apt install llvm` or `sudo pacman -S llvm`
 - `sudo apt install git` or `sudo pacman -S git`
@@ -47,6 +53,8 @@ Required for X11:
 - `sudo apt install libx11-dev`
 - `sudo apt install libxkbcommon-x11-dev`
 - `sudo apt install libx11-xcb-dev`
+
+The only part that is slightly more convoluted compared to the Windows build, is setting up Vulkan. In linux you have to download the compressed Vulkan library from https://vulkan.lunarg.com/sdk/home in the Linux section and download the .tar.xz file. After extracting the library in your location of choice, you must add the LIBRARY_PATH/x86_64 as your VULKAN_SDK environment variable, and add VULKAN_SDK/bin in your path. They also provide a shell script setup_env.sh that is supposed to do this automatically, but in my Arch distro I did not have any luck with that so I setup the variables manually in my shell of choice (FISH).
 
 ## Contributions
 
