@@ -239,13 +239,30 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
         case WM_SYSKEYDOWN:
         case WM_KEYUP:
         case WM_SYSKEYUP: {
+            // Key pressed/released
+            b8 pressed = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
+            Keyboard_Key key = static_cast<Keyboard_Key>(w_param);
 
+            // No need to translate windows keycodes since we are using
+            // windows standard
+            // TODO: Read modifier mask for windows
+            input_process_key(key, 0, pressed);
         } break;
         case WM_MOUSEMOVE: {
-
+            // Mouse move
+            s32 x_position = GET_X_LPARAM(l_param);
+            s32 y_position = GET_Y_LPARAM(l_param);
+            
+            // Pass over to the input subsystem.
+            input_process_mouse_move(x_position, y_position);
         } break;
         case WM_MOUSEWHEEL: {
-
+            s32 z_delta = GET_WHEEL_DELTA_WPARAM(w_param);
+            if (z_delta != 0) {
+                // Flatten the input to an OS-independent (-1, 1)
+                z_delta = (z_delta < 0) ? -1 : 1;
+                input_process_mouse_wheel_move(z_delta);
+            }
         } break;
         case WM_LBUTTONDOWN:
         case WM_MBUTTONDOWN:
@@ -253,7 +270,27 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
         case WM_LBUTTONUP:
         case WM_MBUTTONUP:
         case WM_RBUTTONUP: {
+            b8 pressed = msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN;
+            Mouse_Button mouse_button = Mouse_Button::MAX_BUTTONS;
+            switch (msg) {
+                case WM_LBUTTONDOWN:
+                case WM_LBUTTONUP:
+                    mouse_button = Mouse_Button::LEFT;
+                    break;
+                case WM_MBUTTONDOWN:
+                case WM_MBUTTONUP:
+                    mouse_button = Mouse_Button::MIDDLE;
+                    break;
+                case WM_RBUTTONDOWN:
+                case WM_RBUTTONUP:
+                    mouse_button = Mouse_Button::RIGHT;
+                    break;
+            }
 
+            // Pass over to the input subsystem.
+            if (mouse_button != Mouse_Button::MAX_BUTTONS) {
+                input_process_button(mouse_button, pressed);
+            }
         } break;
     }
 
