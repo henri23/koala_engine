@@ -6,7 +6,6 @@
 #include "containers/auto_array.hpp"
 
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
 
 #define VK_ENSURE_SUCCESS(expr) RUNTIME_ASSERT(expr == VK_SUCCESS);
 

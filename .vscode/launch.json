@@ -6,14 +6,13 @@
     "configurations": [
         {
             "name": "(Windows) Launch",
-            "type": "cppvsdbg",
+            "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/code/build/testbed/testbed.exe",
+            "program": "${workspaceFolder}/bin/testbed/testbed.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/code/build/",
+            "cwd": "${workspaceFolder}/bin/",
             "environment": [],
-            "console":"newExternalWindow",
         },
         {
             "name": "(Linux) Launch",

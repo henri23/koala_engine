@@ -1,3 +1,5 @@
 {
-    "cmake.sourceDirectory": "/home/henri/projects/koala_engine_2.0/code"
+    "cmake.sourceDirectory": "/home/henri/projects/koala_engine_2.0/code",
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/code/compile_commands.json"
 }
