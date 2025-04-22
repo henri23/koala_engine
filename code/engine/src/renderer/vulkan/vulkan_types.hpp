@@ -34,7 +34,7 @@ struct Vulkan_Device {
 
     Vulkan_Swapchain_Support_Info swapchain_info;
 
-	VkFormat depth_format;
+    VkFormat depth_format;
 
     // Queue handles
     VkQueue presentation_queue;
@@ -43,23 +43,23 @@ struct Vulkan_Device {
 };
 
 struct Vulkan_Image {
-	VkImage handle;
-	VkImageView view;
-	VkDeviceMemory memory; // Handle to the memory allocated by the image
-	u32 width;
-	u32 height;
+    VkImage handle;
+    VkImageView view;
+    VkDeviceMemory memory; // Handle to the memory allocated by the image
+    u32 width;
+    u32 height;
 };
 
 struct Vulkan_Swapchain {
-	VkSwapchainKHR handle;
-	u32 max_frames_in_process;
+    VkSwapchainKHR handle;
+    u32 max_frames_in_process;
 
-	u32 image_count;
-	VkImage* images; // array of VkImages. Automatically created and cleaned
-	VkImageView* views; // struct that lets us access the images
+    u32 image_count;
+    VkImage* images;    // array of VkImages. Automatically created and cleaned
+    VkImageView* views; // struct that lets us access the images
 
-	VkSurfaceFormatKHR image_format;
-	VkExtent2D extent;
+    VkSurfaceFormatKHR image_format;
+    VkExtent2D extent;
 };
 
 struct Vulkan_Context {
@@ -68,16 +68,16 @@ struct Vulkan_Context {
     VkAllocationCallbacks* allocator;
     VkPhysicalDevice physical_device; // Implicitly destroyed destroying VkInstance
 
-	u32 framebuffer_width;
-	u32 framebuffer_height;
+    u32 framebuffer_width;
+    u32 framebuffer_height;
 
 #ifdef DEBUG_BUILD
     VkDebugUtilsMessengerEXT debug_messenger;
 #endif
 
-	u64 current_frame;
+    u64 current_frame;
 
-	Vulkan_Swapchain swapchain;
+    Vulkan_Swapchain swapchain;
     Vulkan_Device device;
 };
 
@@ -91,10 +91,10 @@ struct Vulkan_Physical_Device_Requirements {
     Auto_Array<const char*>* device_extension_names;
 };
 
-#define VK_DEVICE_LEVEL_FUNCTION(device, name)             \
-PFN_##name name = (PFN_##name)vkGetDeviceProcAddr(device, #name); \
+#define VK_DEVICE_LEVEL_FUNCTION(device, name)                        \
+    PFN_##name name = (PFN_##name)vkGetDeviceProcAddr(device, #name); \
     RUNTIME_ASSERT_MSG(name, "Could not load device-level Vulkan function");
 
-#define VK_INSTANCE_LEVEL_FUNCTION(instance, name)             \
+#define VK_INSTANCE_LEVEL_FUNCTION(instance, name)                        \
     PFN_##name name = (PFN_##name)vkGetInstanceProcAddr(instance, #name); \
     RUNTIME_ASSERT_MSG(name, "Could not load instance-level Vulkan function");\
