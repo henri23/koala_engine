@@ -51,7 +51,7 @@ b8 platform_startup(
     wc.hIcon = icon;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);  // NULL; // Manage the cursor manually
     wc.hbrBackground = NULL;                   // Transparent
-    wc.lpszClassName = "kohi_window_class";
+    wc.lpszClassName = "koala_window_class";
 
     if (!RegisterClassA(&wc)) {
         MessageBoxA(0, "Window registration failed", "Error", MB_ICONEXCLAMATION | MB_OK);
@@ -89,7 +89,7 @@ b8 platform_startup(
     window_height += border_rect.bottom - border_rect.top;
 
     HWND handle = CreateWindowExA(
-        window_ex_style, "kohi_window_class", application_name,
+        window_ex_style, "koala_window_class", application_name,
         window_style, window_x, window_y, window_width, window_height,
         0, 0, state->h_instance, 0);
 
@@ -190,7 +190,7 @@ b8 platform_create_vulkan_surface(Vulkan_Context* context, Platform_State* plat_
 
     VK_ENSURE_SUCCESS(vkCreateWin32SurfaceKHR(context->instance, &createInfo, nullptr, &context->surface));
 
-    ENGINE_INFO("Vulkan XCB surface created.");
+    ENGINE_INFO("Vulkan WIN32 surface created.");
 
     return TRUE;
 }
@@ -297,5 +297,4 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
     return DefWindowProcA(hwnd, msg, w_param, l_param);
 }
 
-#endif  // KPLATFORM_WINDOWS
-
+#endif
