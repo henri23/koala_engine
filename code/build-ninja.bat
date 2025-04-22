@@ -32,7 +32,9 @@ if errorlevel 1 (
 )
 
 REM Build project
-cmake --build %BUILD_DIR%
+cd %BUILD_DIR%
+@REM cmake --build %BUILD_DIR%
+ninja
 if errorlevel 1 (
     echo [BUILDER]: Build failed!
     exit /b %errorlevel%

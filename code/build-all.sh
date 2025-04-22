@@ -4,14 +4,7 @@ start_time=$(date +%s%3N)
 echo "=============================================="
 echo "[BUILDER]: Building everything..."
 
-# # Check if the 'build' directory exists
-# if [ ! -d "bin" ]; then
-#   # If the 'build' directory does not exist, create it
-#   mkdir bin 
-# fi
-#
-# # Change into the 'build' directory
-# cd bin
+mkdir -p ../bin
 
 # Run cmake to configure the project
 time cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_CXX_COMPILER=clang++ -B../bin . -D CMAKE_BUILD_TYPE=Debug
@@ -19,7 +12,6 @@ time cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_CXX_COMPILER=clang++ -B..
 cd ../bin
 ln -sf "$(pwd)/compile_commands.json" ../code/compile_commands.json
 # Build the project using make
-
 
 time make
 
