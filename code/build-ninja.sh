@@ -1,32 +1,34 @@
-#!bin/bash
+#!/bin/bash
 
 start_time=$(date +%s%3N)
+
 echo "=============================================="
 echo "[BUILDER]: Building everything..."
 
-# # Check if the 'build' directory exists
-# if [ ! -d "bin" ]; then
-#   # If the 'build' directory does not exist, create it
-#   mkdir bin 
-# fi
-#
-# # Change into the 'build' directory
-# cd bin
+# Ensure the bin directory exists
+mkdir -p ../bin
 
-# Run cmake to configure the project
-time cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DCMAKE_CXX_COMPILER=clang++ -B../bin . -D CMAKE_BUILD_TYPE=Debug
+# Run CMake with Ninja generator and Clang++
+time cmake -G Ninja \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=YES \
+    -DCMAKE_CXX_COMPILER=clang++ \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -B ../bin \
+    .
 
+# Go into the bin directory
 cd ../bin
+
+# Link compile_commands.json for IDE integration
 ln -sf "$(pwd)/compile_commands.json" ../code/compile_commands.json
-# Build the project using make
 
+# Build with Ninja
+time ninja
 
-time make
-
+# Check for errors
 ERRORLEVEL=$?
-if [ $ERRORLEVEL -ne 0 ]
-then
-echo "[BUILDER]: Error:"$ERRORLEVEL && exit
+if [ $ERRORLEVEL -ne 0 ]; then
+    echo "[BUILDER]: Error: $ERRORLEVEL" && exit
 fi
 
 # Record end time and calculate duration
@@ -35,6 +37,8 @@ tottime=$(expr $end_time - $start_time)
 
 # Print total elapsed time in seconds.milliseconds
 echo "[BUILDER]: Total build time: $tottime ms\n"
+
+
 echo "[BUILDER]: All assemblies built successfully."
 echo
 echo "[BUILDER]: Launching testbed..."

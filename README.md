@@ -28,9 +28,9 @@ As a starting point, I am following the architectural choices that Travis Vroman
 See [here](TODO.md).
 
 ### Prerequisites for Windows
-The engine supports two different build systems for Windows: ninja (using the Microsoft compiler MSVC) and Visual Studio (using LLVM clang frontend). 
+The engine supports two different compilers with two different built systems for Windows: ninja (using the Microsoft compiler MSVC) and Visual Studio (using LLVM clang frontend). 
 
-The ninja build requires that Visual Studio is installed and that cl.exe (the Microsoft compiler) and its related environments variables are already setup. To do so, Visual Studio provides a premade .bat file located at "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat". Either run the build script from Developed Command Prompt for Visual Studio or run this batch file on the startup of a powershell terminal. This can be done in the $profile file of the powershell.
+The ninja build requires that Visual Studio is installed and that cl.exe (the Microsoft compiler MSVC) and its related environments variables are already setup. To do so, Visual Studio provides a premade .bat file located at "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat". Either run the build script from Developed Command Prompt for Visual Studio or run this batch file on the startup of a powershell terminal. This can be done in the $profile file of the powershell.
 
 Instead for the Visual Studio build you must install clang from the official LLVM releases, and setup the clang frontend in your PATH during the installation. 
 

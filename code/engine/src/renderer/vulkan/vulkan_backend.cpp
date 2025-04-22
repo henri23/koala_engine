@@ -121,8 +121,8 @@ b8 vulkan_initialize(
 
     vulkan_swapchain_create(
         &context,
-        1280,
-        720,
+        context.framebuffer_width,
+        context.framebuffer_height,
         &context.swapchain);
 
     ENGINE_INFO("Vulkan backend initialized");
