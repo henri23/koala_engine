@@ -96,9 +96,12 @@ b8 vulkan_initialize(
     vulkan_create_debug_logger(&context.instance);
 #endif
 
-    Auto_Array<const char*> extension_requirements;
+    Auto_Array<const char*> device_level_extension_requirements;
 
-    extension_requirements.add(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+	// The swapchain is a device specific property (whether it supports it 
+	// or it doesn't) so we need to query specificly for the swapchain support
+	// the device that we chose to use
+    device_level_extension_requirements.add(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
     // Setup Vulkan device
     Vulkan_Physical_Device_Requirements device_requirements;
@@ -108,7 +111,8 @@ b8 vulkan_initialize(
     device_requirements.transfer = TRUE;
     device_requirements.present = TRUE;
     device_requirements.discrete_gpu = TRUE;
-    device_requirements.device_extension_names = &extension_requirements;
+    device_requirements.device_extension_names =
+        &device_level_extension_requirements;
 
     // Create platform specific surface. Since the surface creation will
     // depend on the platform API, it is best that it is implemented in
@@ -133,7 +137,7 @@ b8 vulkan_initialize(
 
     ENGINE_INFO("Vulkan backend initialized");
 
-    extension_requirements.free();
+    device_level_extension_requirements.free();
 
     return TRUE;
 }
@@ -255,12 +259,15 @@ b8 vulkan_create_debug_logger(VkInstance* instance) {
     VkDebugUtilsMessengerCreateInfoEXT debug_create_info =
         {VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
 
+    // Specify the level of events that we want to capture
     debug_create_info.messageSeverity =
         VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
         VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
         VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
 
+    // Specify the nature of events that we want to be fed from the validation
+    // layer
     debug_create_info.messageType =
         VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
@@ -277,10 +284,11 @@ b8 vulkan_create_debug_logger(VkInstance* instance) {
     VK_INSTANCE_LEVEL_FUNCTION(*instance, vkCreateDebugUtilsMessengerEXT);
 
     VK_ENSURE_SUCCESS(
-        vkCreateDebugUtilsMessengerEXT(*instance,
-                                       &debug_create_info,
-                                       context.allocator,
-                                       &context.debug_messenger));
+        vkCreateDebugUtilsMessengerEXT(
+            *instance,
+            &debug_create_info,
+            context.allocator,
+            &context.debug_messenger));
 
     ENGINE_DEBUG("Vulkan debugger created");
     return TRUE;
@@ -331,6 +339,6 @@ s32 find_memory_index(u32 type_filter, u32 property_flags) {
         }
     }
 
-	ENGINE_WARN("Memory type not suitable");
+    ENGINE_WARN("Memory type not suitable");
     return -1;
 }

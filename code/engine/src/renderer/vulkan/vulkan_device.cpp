@@ -52,6 +52,8 @@ b8 vulkan_device_initialize(
 b8 vulkan_device_detect_depth_format(Vulkan_Device* device) {
 
     const u64 candidate_count = 3;
+
+	// Specify the types of z-buffer that we are happy to use
     VkFormat candidates[3]{
         VK_FORMAT_D32_SFLOAT,         // 32-bit signaed float, 32 bits depth component
         VK_FORMAT_D32_SFLOAT_S8_UINT, // Two components, 32 bit depth, 8 bit stencil
