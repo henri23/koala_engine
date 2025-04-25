@@ -21,6 +21,7 @@ void vulkan_image_create(
     // 2. Query its memory requirements with vkGetImageMemoryRequirements
     // 3. Allocate memory manually using vkAllocateMemory
     // 4. Bind the memory to the image with vkBindImageMemory
+
     out_image->width = width;
     out_image->height = height;
 
