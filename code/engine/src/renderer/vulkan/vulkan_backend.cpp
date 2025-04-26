@@ -194,6 +194,8 @@ b8 vulkan_end_frame(
     return TRUE;
 }
 
+// (TODO) move the check of availability of the required layers outside
+// this function
 b8 vulkan_enable_validation_layers(
     Auto_Array<const char*>* required_layers_array) {
 
@@ -217,11 +219,6 @@ b8 vulkan_enable_validation_layers(
     VK_ENSURE_SUCCESS(
         vkEnumerateInstanceLayerProperties(&available_layer_count,
                                            available_layers_array.data));
-
-    // ENGINE_DEBUG("Available Vulkan layers:");
-    // for (u32 i = 0; i < available_layer_count; ++i) {
-    //     ENGINE_DEBUG(available_layers_array[i].layerName);
-    // }
 
     for (u32 i = 0; i < required_layers_array->length; ++i) {
         ENGINE_INFO("Searching for layer: %s ...",

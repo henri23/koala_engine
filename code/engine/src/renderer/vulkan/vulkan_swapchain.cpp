@@ -229,6 +229,7 @@ void create_swapchain(
         ENGINE_FATAL("Failed to find a supported depth format!");
     }
 
+	// Z-buffer creation
     // Create a depth image. The depth image is an image where the depth info
     // is written too. However the swapchain does not create this image for us
     // so it must be created manually
