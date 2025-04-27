@@ -4,8 +4,8 @@
 #include "renderer/renderer_types.inl"
 #include "renderer/vulkan/vulkan_device.hpp"
 #include "renderer/vulkan/vulkan_platform.hpp"
-#include "renderer/vulkan/vulkan_swapchain.hpp"
 #include "renderer/vulkan/vulkan_renderpass.hpp"
+#include "renderer/vulkan/vulkan_swapchain.hpp"
 #include "vulkan_types.hpp"
 
 #include "containers/auto_array.hpp"
@@ -145,14 +145,13 @@ b8 vulkan_initialize(
         context.framebuffer_height,
         &context.swapchain);
 
-	vulkan_renderpass_create(
-		&context,
-		&context.main_renderpass,
-		0, 0, context.framebuffer_width, context.framebuffer_height,
-		0.0f, 0.0f, 0.2f, 1.0f,
-		1.0f,
-		0
-	);
+    vulkan_renderpass_create(
+        &context,
+        &context.main_renderpass,
+        0, 0, context.framebuffer_width, context.framebuffer_height,
+        0.0f, 0.0f, 0.2f, 1.0f,
+        1.0f,
+        0);
 
     ENGINE_INFO("Vulkan backend initialized");
 
@@ -164,9 +163,9 @@ b8 vulkan_initialize(
 void vulkan_shutdown(
     Renderer_Backend* backend) {
 
-	vulkan_renderpass_destroy(
-		&context, 
-		&context.main_renderpass);
+    vulkan_renderpass_destroy(
+        &context,
+        &context.main_renderpass);
 
     vulkan_swapchain_destroy(
         &context,
@@ -374,7 +373,7 @@ s32 find_memory_index(u32 type_filter, u32 requested_property_flags) {
             // Check if the memory type i supports all required properties
             // (flags)
             (memory_properties.memoryTypes[i].propertyFlags &
-             	requested_property_flags) == requested_property_flags) {
+             requested_property_flags) == requested_property_flags) {
             return i;
         }
     }
