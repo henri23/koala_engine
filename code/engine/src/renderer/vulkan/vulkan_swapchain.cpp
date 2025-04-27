@@ -22,6 +22,8 @@ void create_swapchain(
     // 3. Specify the extent of the image (size). This will be immutable so if
     // 	  the screen gets resized, the swapchain must be recreated with the new
     // 	  size
+
+    // Retrieve the device specific swapchain support info
     Vulkan_Swapchain_Support_Info* swapchain_info =
         &context->device.swapchain_info;
 
@@ -35,7 +37,7 @@ void create_swapchain(
                 VK_FORMAT_B8G8R8_SRGB &&
             swapchain_info->formats[i].colorSpace ==
                 VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-            context->swapchain.image_format = swapchain_info->formats[i];
+            out_swapchain->image_format = swapchain_info->formats[i];
             found = TRUE;
             break;
         }
@@ -43,8 +45,11 @@ void create_swapchain(
 
     // If the requested format was not found then pick the first one available
     if (!found)
-        context->swapchain.image_format = swapchain_info->formats[0];
+        out_swapchain->image_format = swapchain_info->formats[0];
 
+    // From the time we get initially the swapchain support during device
+    // selection, until the renderer comes here, the present modes may have
+    // changed so we query a second time to get the most up-to-date properties
     vulkan_device_query_swapchain_capabilities(
         context->device.physical_device,
         context->surface,
@@ -74,13 +79,14 @@ void create_swapchain(
     // of Apple's Retina Displas (TODO).
 
     VkExtent2D actual_extent = {
-        CLAMP(width,
-              (u32)swapchain_info->capabilities.minImageExtent.width,
-              (u32)swapchain_info->capabilities.maxImageExtent.width),
-
-        CLAMP(height,
-              (u32)swapchain_info->capabilities.minImageExtent.height,
-              (u32)swapchain_info->capabilities.maxImageExtent.height),
+        CLAMP(
+            width,
+            (u32)swapchain_info->capabilities.minImageExtent.width,
+            (u32)swapchain_info->capabilities.maxImageExtent.width),
+        CLAMP(
+            height,
+            (u32)swapchain_info->capabilities.minImageExtent.height,
+            (u32)swapchain_info->capabilities.maxImageExtent.height),
     };
 
     VkSwapchainCreateInfoKHR create_info =
@@ -90,15 +96,17 @@ void create_swapchain(
 
     // Set the minimum image count in the swapchain, but nothing forbids the
     // swapchain to have more images than this
-    u32 image_count = CLAMP(swapchain_info->capabilities.minImageCount + 1,
-                            0,
-                            swapchain_info->capabilities.maxImageCount);
-    context->swapchain.max_frames_in_process = 2;
+    u32 image_count = CLAMP(
+        swapchain_info->capabilities.minImageCount + 1,
+        0,
+        swapchain_info->capabilities.maxImageCount);
+
+    out_swapchain->max_frames_in_process = 2;
 
     create_info.minImageCount = image_count;
 
-    create_info.imageFormat = context->swapchain.image_format.format;
-    create_info.imageColorSpace = context->swapchain.image_format.colorSpace;
+    create_info.imageFormat = out_swapchain->image_format.format;
+    create_info.imageColorSpace = out_swapchain->image_format.colorSpace;
     create_info.imageExtent = actual_extent;
 
     // imageArrayLayers specifies the amount of layers each image consists of.
@@ -124,9 +132,7 @@ void create_swapchain(
         context->device.graphics_queue_index,
         context->device.present_queue_index};
 
-    if (context->device.graphics_queue_index !=
-        context->device.present_queue_index) {
-
+    if (context->device.graphics_queue_index != context->device.present_queue_index) {
         create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         create_info.queueFamilyIndexCount = 2;
         create_info.pQueueFamilyIndices = queue_family_indices;
@@ -150,48 +156,48 @@ void create_swapchain(
         context->device.logical_device,
         &create_info,
         context->allocator,
-        &context->swapchain.handle))
+        &out_swapchain->handle))
 
     ENGINE_DEBUG("Vulkan swapchain instance created");
 
-    context->swapchain.extent = actual_extent;
+    out_swapchain->extent = actual_extent;
 
     context->current_frame = 0;
-    context->swapchain.image_count = 0;
+    out_swapchain->image_count = 0;
 
     vkGetSwapchainImagesKHR(
         context->device.logical_device,
-        context->swapchain.handle,
-        &context->swapchain.image_count,
+        out_swapchain->handle,
+        &out_swapchain->image_count,
         nullptr);
 
-    if (!context->swapchain.images) {
-        context->swapchain.images = static_cast<VkImage*>(
+    if (!out_swapchain->images) {
+        out_swapchain->images = static_cast<VkImage*>(
             memory_allocate(
-                sizeof(VkImage) * context->swapchain.image_count,
+                sizeof(VkImage) * out_swapchain->image_count,
                 Memory_Tag::RENDERER));
     }
 
-    if (!context->swapchain.views) {
-        context->swapchain.views = static_cast<VkImageView*>(
+    if (!out_swapchain->views) {
+        out_swapchain->views = static_cast<VkImageView*>(
             memory_allocate(
-                sizeof(VkImageView) * context->swapchain.image_count,
+                sizeof(VkImageView) * out_swapchain->image_count,
                 Memory_Tag::RENDERER));
     }
 
     vkGetSwapchainImagesKHR(
         context->device.logical_device,
-        context->swapchain.handle,
-        &context->swapchain.image_count,
-        context->swapchain.images);
+        out_swapchain->handle,
+        &out_swapchain->image_count,
+        out_swapchain->images);
 
-    for (u32 i = 0; i < context->swapchain.image_count; ++i) {
+    for (u32 i = 0; i < out_swapchain->image_count; ++i) {
         VkImageViewCreateInfo view_info =
             {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
 
-        view_info.image = context->swapchain.images[i];
+        view_info.image = out_swapchain->images[i];
         view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        view_info.format = context->swapchain.image_format.format;
+        view_info.format = out_swapchain->image_format.format;
         view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
         // The components field allows us to swizzle the color channels. If
@@ -216,7 +222,7 @@ void create_swapchain(
                 context->device.logical_device,
                 &view_info,
                 context->allocator,
-                &context->swapchain.views[i]));
+                &out_swapchain->views[i]));
     }
 
     ENGINE_DEBUG("Created images and image views for swapchain");
@@ -229,7 +235,7 @@ void create_swapchain(
         ENGINE_FATAL("Failed to find a supported depth format!");
     }
 
-	// Z-buffer creation
+    // Z-buffer creation
     // Create a depth image. The depth image is an image where the depth info
     // is written too. However the swapchain does not create this image for us
     // so it must be created manually
@@ -350,20 +356,20 @@ void vulkan_swapchain_destroy(
     Vulkan_Context* context,
     Vulkan_Swapchain* swapchain) {
 
-	// Destroy the images that we create
+    // Destroy the images that we create
     vulkan_image_destroy(
         context,
         &swapchain->depth_attachment);
 
     ENGINE_DEBUG("Destroying image views... Found %d views",
-                 context->swapchain.image_count);
+                 swapchain->image_count);
 
-	// Only destroy the views, because the images of the swapchain are managed
-	// by Vulkan itself so there is no need to destroy them
-    for (u32 i = 0; i < context->swapchain.image_count; ++i) {
+    // Only destroy the views, because the images of the swapchain are managed
+    // by Vulkan itself so there is no need to destroy them
+    for (u32 i = 0; i < swapchain->image_count; ++i) {
         vkDestroyImageView(
             context->device.logical_device,
-            context->swapchain.views[i],
+            swapchain->views[i],
             context->allocator);
     }
 
@@ -373,12 +379,12 @@ void vulkan_swapchain_destroy(
 
     memory_deallocate(
         context->swapchain.views,
-        sizeof(VkImageView) * context->swapchain.image_count,
+        sizeof(VkImageView) * swapchain->image_count,
         Memory_Tag::RENDERER);
 
     memory_deallocate(
         context->swapchain.images,
-        sizeof(VkImage) * context->swapchain.image_count,
+        sizeof(VkImage) * swapchain->image_count,
         Memory_Tag::RENDERER);
 
     vkDestroySwapchainKHR(

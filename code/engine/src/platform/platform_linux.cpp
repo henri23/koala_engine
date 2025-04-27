@@ -243,15 +243,16 @@ b8 platform_message_pump(Platform_State* plat_state) {
             }
         } break;
         case XCB_MOTION_NOTIFY: { // Mouse movement
-            xcb_motion_notify_event_t* ev = reinterpret_cast<xcb_motion_notify_event_t*>(generic_event);
+            xcb_motion_notify_event_t* ev = 
+				reinterpret_cast<xcb_motion_notify_event_t*>(generic_event);
 
             input_process_mouse_move(
                 ev->event_x,
                 ev->event_y);
         } break;
         case XCB_CLIENT_MESSAGE: {
-            xcb_client_message_event_t* cm = reinterpret_cast<xcb_client_message_event_t*>(
-                generic_event);
+            xcb_client_message_event_t* cm =
+                reinterpret_cast<xcb_client_message_event_t*>(generic_event);
 
             if (cm->data.data32[0] == state->wm_delete_protocol) {
                 quit_flagged = TRUE;
@@ -261,9 +262,12 @@ b8 platform_message_pump(Platform_State* plat_state) {
             break;
         }
 
-        // NOTE:  We need to free the event after every event because the events will be dynamically allocated
-        //        by XCB when we poll for new events. They are dynamically allocated because the events can
-        //        differ in size so they cannot be stack allocated. We can fix this for internal events with unions
+        // NOTE:  We need to free the event after every event because
+        // 		  the events will be dynamically allocated by XCB when
+        // 		  we poll for new events. They are dynamically allocated
+        // 		  because the events can differ in size so they cannot
+        // 		  be stack allocated. We can fix this for internal events
+        // 		  with unions
         free(generic_event);
     }
 

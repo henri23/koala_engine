@@ -50,6 +50,28 @@ struct Vulkan_Image {
     u32 height;
 };
 
+// Finite state machine of the renderpass
+enum class Renderpass_State {
+    READY,
+    RECORDING,
+    IN_RENDER_PASS,
+    RECORDIN_ENDED,
+    SUBMITTED,
+    NOT_ALLOCATED
+};
+
+struct Vulkan_Renderpass {
+    VkRenderPass handle;
+
+    f32 x, y, w, h;
+    f32 r, g, b, a;
+
+    f32 depth;
+    u32 stencil;
+
+    Renderpass_State state;
+};
+
 struct Vulkan_Swapchain {
     VkSwapchainKHR handle;
     u32 max_frames_in_process;
@@ -61,7 +83,22 @@ struct Vulkan_Swapchain {
     VkSurfaceFormatKHR image_format;
     VkExtent2D extent;
 
-	Vulkan_Image depth_attachment;
+    Vulkan_Image depth_attachment;
+};
+
+enum class Command_Buffer_State {
+    READY,
+    RECORDING,
+    IN_RENDER_PASS,
+    RECORDIN_ENDED,
+    SUBMITTED,
+    NOT_ALLOCATED
+};
+
+struct Vulkan_Command_Buffer {
+	VkCommandBuffer handle;
+
+	Command_Buffer_State state;
 };
 
 struct Vulkan_Context {
@@ -81,8 +118,9 @@ struct Vulkan_Context {
 
     Vulkan_Swapchain swapchain;
     Vulkan_Device device;
+	Vulkan_Renderpass main_renderpass;
 
-	s32 (*find_memory_index)(u32 type_filter, u32 property_flags);
+    s32 (*find_memory_index)(u32 type_filter, u32 property_flags);
 };
 
 struct Vulkan_Physical_Device_Requirements {

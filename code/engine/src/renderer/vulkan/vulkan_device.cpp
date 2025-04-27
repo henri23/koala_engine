@@ -236,9 +236,6 @@ b8 create_logical_device(Vulkan_Context* context) {
         queue_family_indices[2] = context->device.present_queue_index;
 
     // Information for the queues that we want to request
-    // VkDeviceQueueCreateInfo
-    //     queue_create_infos[distinct_queue_family_indices_count];
-
     Auto_Array<VkDeviceQueueCreateInfo> queue_create_infos;
     queue_create_infos.reserve(distinct_queue_family_indices_count);
 
@@ -274,7 +271,7 @@ b8 create_logical_device(Vulkan_Context* context) {
     logical_device_create_info.ppEnabledExtensionNames = &required_extensions;
     logical_device_create_info.enabledExtensionCount = 1;
 
-    // Depracated, for calirity explicitly set them no uninitialized
+    // Depracated, for clarity explicitly set them to uninitialized
     logical_device_create_info.enabledLayerCount = 0;
     logical_device_create_info.ppEnabledLayerNames = nullptr;
 
@@ -298,6 +295,7 @@ b8 create_logical_device(Vulkan_Context* context) {
                      &context->device.presentation_queue);
 
     ENGINE_INFO("Queues obtained");
+
     queue_family_indices.free();
     queue_create_infos.free();
 
@@ -460,7 +458,8 @@ b8 is_device_suitable(
         ENGINE_TRACE("Present queue family index: %d",
                      out_indices->present_family_index);
 
-        // Check for last whether the device supports all the required ext.
+        // Check whether the device supports all the required device level 
+		// extensions (namelly the swapchain extension)
         if (requirements->device_extension_names->length > 0) {
             u32 available_extensions_count = 0;
 

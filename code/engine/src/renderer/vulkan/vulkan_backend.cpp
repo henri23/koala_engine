@@ -5,10 +5,10 @@
 #include "renderer/vulkan/vulkan_device.hpp"
 #include "renderer/vulkan/vulkan_platform.hpp"
 #include "renderer/vulkan/vulkan_swapchain.hpp"
+#include "renderer/vulkan/vulkan_renderpass.hpp"
 #include "vulkan_types.hpp"
 
 #include "containers/auto_array.hpp"
-#include <vulkan/vulkan_core.h>
 
 internal Vulkan_Context context;
 
@@ -45,6 +45,11 @@ b8 vulkan_initialize(
     app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.pEngineName = "Koala engine";
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+
+    // The API version should be set to the absolute minimum version of Vulkan
+    // that the game engine requires to run, not to the version of the header
+    // that is being used for development. This allows a wide assortment of
+    // devices and platforms to run the koala engine
     app_info.apiVersion = VK_API_VERSION_1_0;
 
     // CreateInfo struct tells the Vulkan driver which global extensions
@@ -78,8 +83,13 @@ b8 vulkan_initialize(
     vulkan_enable_validation_layers(&required_layers_array);
 #endif
 
+    // In Vulkan, applications need to explicitly specify the extensions that
+    // they are going to use, and so the driver disables the extensions that
+    // will not be used, so that the application cannot accidently start using
+    // an extension in runtime
     createInfo.enabledExtensionCount = required_extensions_array.length;
     createInfo.ppEnabledExtensionNames = required_extensions_array.data;
+
     createInfo.enabledLayerCount = required_layers_array.length;
     createInfo.ppEnabledLayerNames = required_layers_array.data;
 
@@ -98,9 +108,9 @@ b8 vulkan_initialize(
 
     Auto_Array<const char*> device_level_extension_requirements;
 
-	// The swapchain is a device specific property (whether it supports it 
-	// or it doesn't) so we need to query specificly for the swapchain support
-	// the device that we chose to use
+    // The swapchain is a device specific property (whether it supports it
+    // or it doesn't) so we need to query specificly for the swapchain support
+    // the device that we chose to use
     device_level_extension_requirements.add(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
     // Setup Vulkan device
@@ -135,6 +145,15 @@ b8 vulkan_initialize(
         context.framebuffer_height,
         &context.swapchain);
 
+	vulkan_renderpass_create(
+		&context,
+		&context.main_renderpass,
+		0, 0, context.framebuffer_width, context.framebuffer_height,
+		0.0f, 0.0f, 0.2f, 1.0f,
+		1.0f,
+		0
+	);
+
     ENGINE_INFO("Vulkan backend initialized");
 
     device_level_extension_requirements.free();
@@ -144,6 +163,10 @@ b8 vulkan_initialize(
 
 void vulkan_shutdown(
     Renderer_Backend* backend) {
+
+	vulkan_renderpass_destroy(
+		&context, 
+		&context.main_renderpass);
 
     vulkan_swapchain_destroy(
         &context,
@@ -319,9 +342,25 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
     return VK_FALSE;
 }
 
-s32 find_memory_index(u32 type_filter, u32 property_flags) {
+s32 find_memory_index(u32 type_filter, u32 requested_property_flags) {
 
     VkPhysicalDeviceMemoryProperties memory_properties;
+
+    // DeviceMemoryProperties structure contains the poroperties of both the
+    // device's heaps and its supported memory types. The structure has the
+    // memoryTypes[VK_MAX_MEMORY_TYPES] field which is an array of these
+    // structures:
+    //
+    // VkMemoryType {
+    // 		VkMemoryPropertyFlags	property_flags;
+    // 		uint32_t				heapIndex;
+    // }
+    //
+    // The flags field described the type of memory and is made of a combination
+    // of the VkMemoryPropertyFlagBits flags. When creating a Vulka image, the
+    // image itself specifies the type of memory it needs on the device in order
+    // to be created, so we need to check whether that memory type is supported
+    // and if so, we need to return the heapIndex to that memory
 
     vkGetPhysicalDeviceMemoryProperties(
         context.device.physical_device,
@@ -334,7 +373,8 @@ s32 find_memory_index(u32 type_filter, u32 property_flags) {
             type_filter & (1 << i) &&
             // Check if the memory type i supports all required properties
             // (flags)
-            (memory_properties.memoryTypes[i].propertyFlags & property_flags) == property_flags) {
+            (memory_properties.memoryTypes[i].propertyFlags &
+             	requested_property_flags) == requested_property_flags) {
             return i;
         }
     }

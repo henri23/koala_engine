@@ -3,6 +3,8 @@
 
 #include "core/logger.hpp"
 
+// Images are memory blocks allocated in the device that include information
+// about the content too. Contrary to buffers which are just chunks of data
 void vulkan_image_create(
     Vulkan_Context* context,
     VkImageType image_type,
@@ -19,7 +21,7 @@ void vulkan_image_create(
     // Vulkan does not automatically allocate memory for images. Instead we:
     // 1. Create an image with vkCreateImage
     // 2. Query its memory requirements with vkGetImageMemoryRequirements
-    // 3. Allocate memory manually using vkAllocateMemory
+    // 3. Allocate device memory manually using vkAllocateMemory
     // 4. Bind the memory to the image with vkBindImageMemory
 
     out_image->width = width;
