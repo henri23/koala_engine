@@ -53,7 +53,7 @@ b8 vulkan_device_detect_depth_format(Vulkan_Device* device) {
 
     const u64 candidate_count = 3;
 
-	// Specify the types of z-buffer that we are happy to use
+    // Specify the types of z-buffer that we are happy to use
     VkFormat candidates[3]{
         VK_FORMAT_D32_SFLOAT,         // 32-bit signaed float, 32 bits depth component
         VK_FORMAT_D32_SFLOAT_S8_UINT, // Two components, 32 bit depth, 8 bit stencil
@@ -299,6 +299,20 @@ b8 create_logical_device(Vulkan_Context* context) {
     queue_family_indices.free();
     queue_create_infos.free();
 
+    VkCommandPoolCreateInfo pool_create_info =
+        {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+    pool_create_info.queueFamilyIndex = context->device.graphics_queue_index;
+    pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+    VK_ENSURE_SUCCESS(
+        vkCreateCommandPool(
+            context->device.logical_device,
+            &pool_create_info,
+            context->allocator,
+            &context->device.graphics_command_pool));
+
+	ENGINE_INFO("Graphics command pool created");
+
     return TRUE;
 }
 
@@ -458,8 +472,8 @@ b8 is_device_suitable(
         ENGINE_TRACE("Present queue family index: %d",
                      out_indices->present_family_index);
 
-        // Check whether the device supports all the required device level 
-		// extensions (namelly the swapchain extension)
+        // Check whether the device supports all the required device level
+        // extensions (namelly the swapchain extension)
         if (requirements->device_extension_names->length > 0) {
             u32 available_extensions_count = 0;
 
@@ -571,6 +585,15 @@ void vulkan_device_query_swapchain_capabilities(
 }
 
 void vulkan_device_shutdown(Vulkan_Context* context) {
+
+	ENGINE_DEBUG("Destroying command pools...");
+
+	vkDestroyCommandPool(
+		context->device.logical_device,
+		context->device.graphics_command_pool,
+		context->allocator
+	);
+
     if (context->device.logical_device) {
         ENGINE_INFO("Destroying logical device recource...");
 

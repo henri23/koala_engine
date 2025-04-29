@@ -90,7 +90,7 @@ void vulkan_renderpass_create(
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_attachment_reference;
 
-    // TODO: Other attachment types (input, resolve, preserve)
+    // TODO: Specify other attachment types like input, resolve, preserve
     subpass.pDepthStencilAttachment = &depth_attachment_reference;
 
     subpass.inputAttachmentCount = 0;
@@ -101,6 +101,7 @@ void vulkan_renderpass_create(
     subpass.preserveAttachmentCount = 0;
     subpass.pPreserveAttachments = nullptr;
 
+	// TODO: I do not understand this part good enough yet
     VkSubpassDependency dependency;
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;

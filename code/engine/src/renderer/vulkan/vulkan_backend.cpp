@@ -2,6 +2,7 @@
 #include "core/string.hpp"
 
 #include "renderer/renderer_types.inl"
+#include "renderer/vulkan/vulkan_command_buffer.hpp"
 #include "renderer/vulkan/vulkan_device.hpp"
 #include "renderer/vulkan/vulkan_platform.hpp"
 #include "renderer/vulkan/vulkan_renderpass.hpp"
@@ -11,6 +12,8 @@
 #include "containers/auto_array.hpp"
 
 internal Vulkan_Context context;
+
+void create_command_buffers(Renderer_Backend* backend);
 
 // Forward declare messenger callback
 VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
@@ -153,6 +156,8 @@ b8 vulkan_initialize(
         1.0f,
         0);
 
+    create_command_buffers(backend);
+
     ENGINE_INFO("Vulkan backend initialized");
 
     device_level_extension_requirements.free();
@@ -162,6 +167,23 @@ b8 vulkan_initialize(
 
 void vulkan_shutdown(
     Renderer_Backend* backend) {
+
+	// Technically this is not needed because when the command pool of the 
+	// device gets destroyed during device shutdown, all associated command
+	// buffers implicitly are freed. However for clarity I will still leave 
+	// this here to remember that this operation is done
+	for(u32 i = 0; i < context.swapchain.image_count; ++i){
+		if(context.graphics_command_buffers[i].handle) {
+			vulkan_command_buffer_free(
+				&context,
+				context.device.graphics_command_pool,
+				&context.graphics_command_buffers[i]
+			);
+			context.graphics_command_buffers[i].handle = nullptr;
+		}
+	}
+
+	context.graphics_command_buffers.free();
 
     vulkan_renderpass_destroy(
         &context,
@@ -380,4 +402,41 @@ s32 find_memory_index(u32 type_filter, u32 requested_property_flags) {
 
     ENGINE_WARN("Memory type not suitable");
     return -1;
+}
+
+void create_command_buffers(Renderer_Backend* backend) {
+    // For each of our swapchain images, we need to create a command buffer,
+    // since the images can be handled asynchronously, so while presenting one
+    // image we can draw to the other
+    if (!context.graphics_command_buffers.data) {
+        context.graphics_command_buffers.reserve(
+            context.swapchain.image_count);
+
+        for (u32 i = 0; i < context.swapchain.image_count; ++i) {
+            memory_zero(
+                &context.graphics_command_buffers[i],
+                sizeof(Vulkan_Command_Buffer));
+        }
+    }
+
+    for (u32 i = 0; i < context.swapchain.image_count; ++i) {
+        if (context.graphics_command_buffers[i].handle) {
+            vulkan_command_buffer_free(
+                &context,
+                context.device.graphics_command_pool,
+                &context.graphics_command_buffers[i]);
+        }
+
+        memory_zero(
+            &context.graphics_command_buffers[i],
+            sizeof(Vulkan_Command_Buffer));
+
+        vulkan_command_buffer_allocate(
+            &context,
+            context.device.graphics_command_pool,
+            TRUE,
+            &context.graphics_command_buffers[i]);
+    }
+
+    ENGINE_DEBUG("Vulkan command buffers created");
 }

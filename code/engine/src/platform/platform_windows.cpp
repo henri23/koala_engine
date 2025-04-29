@@ -5,6 +5,7 @@
 
 #include "core/logger.hpp"
 #include "core/input.hpp"
+#include "core/event.hpp"
 
 #include <windows.h>
 #include <windowsx.h>  // param input extraction
@@ -221,8 +222,9 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
             // Notify the OS that erasing will be handled by the application to prevent flicker.
             return 1;
         case WM_CLOSE:
-            // TODO: Fire an event for the application to quit.
-            return 0;
+			Event_Context data = {};
+			event_fire(Event_Code::APPLICATION_QUIT, nullptr, data);
+			return TRUE;
         case WM_DESTROY:
             PostQuitMessage(0);
             return 0;

@@ -32,7 +32,7 @@ struct KOALA_API Auto_Array {
         ++length;
     }
 
-    void reserve(u64 data_count) {
+    void reserve(u64 data_count, b8 prefilled = TRUE) {
         capacity = data_count;
 
         data = static_cast<T*>(
@@ -40,7 +40,10 @@ struct KOALA_API Auto_Array {
                 sizeof(T) * data_count,
                 Memory_Tag::DARRAY));
 
-        length = data_count;
+        if (prefilled)
+            length = data_count;
+        else
+            length = 0;
     }
 
     void free() {

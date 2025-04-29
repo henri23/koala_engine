@@ -40,6 +40,8 @@ struct Vulkan_Device {
     VkQueue presentation_queue;
     VkQueue graphics_queue;
     VkQueue transfer_queue;
+
+	VkCommandPool graphics_command_pool;
 };
 
 struct Vulkan_Image {
@@ -90,7 +92,7 @@ enum class Command_Buffer_State {
     READY,
     RECORDING,
     IN_RENDER_PASS,
-    RECORDIN_ENDED,
+    RECORDING_ENDED,
     SUBMITTED,
     NOT_ALLOCATED
 };
@@ -119,6 +121,8 @@ struct Vulkan_Context {
     Vulkan_Swapchain swapchain;
     Vulkan_Device device;
 	Vulkan_Renderpass main_renderpass;
+
+	Auto_Array<Vulkan_Command_Buffer> graphics_command_buffers;
 
     s32 (*find_memory_index)(u32 type_filter, u32 property_flags);
 };
