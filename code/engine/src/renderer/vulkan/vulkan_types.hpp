@@ -41,7 +41,7 @@ struct Vulkan_Device {
     VkQueue graphics_queue;
     VkQueue transfer_queue;
 
-	VkCommandPool graphics_command_pool;
+    VkCommandPool graphics_command_pool;
 };
 
 struct Vulkan_Image {
@@ -74,13 +74,22 @@ struct Vulkan_Renderpass {
     Renderpass_State state;
 };
 
+struct Vulkan_Framebuffer {
+    VkFramebuffer handle;
+    u32 attachment_count;
+    VkImageView* attachments;
+    Vulkan_Renderpass* renderpass;
+};
+
 struct Vulkan_Swapchain {
     VkSwapchainKHR handle;
     u32 max_frames_in_process;
 
     u32 image_count;
     VkImage* images;    // array of VkImages. Automatically created and cleaned
-    VkImageView* views; // struct that lets us access the images
+    VkImageView* views; // array of Views, struct that lets us access the images
+
+    Auto_Array<Vulkan_Framebuffer> framebuffers;
 
     VkSurfaceFormatKHR image_format;
     VkExtent2D extent;
@@ -98,9 +107,14 @@ enum class Command_Buffer_State {
 };
 
 struct Vulkan_Command_Buffer {
-	VkCommandBuffer handle;
+    VkCommandBuffer handle;
 
-	Command_Buffer_State state;
+    Command_Buffer_State state;
+};
+
+struct Vulkan_Fence {
+	VkFence handle;
+	b8 is_signaled;
 };
 
 struct Vulkan_Context {
@@ -112,17 +126,35 @@ struct Vulkan_Context {
     u32 framebuffer_width;
     u32 framebuffer_height;
 
+	// Keep two replicas for last time and current. If these two are out of
+	// sync, a resize event has ocurred
+	u64 framebuffer_size_generation;
+	u64 framebuffer_size_last_generation;
+
 #ifdef DEBUG_BUILD
     VkDebugUtilsMessengerEXT debug_messenger;
 #endif
 
-    u64 current_frame;
+    u32 image_count;
+	u64 current_frame;
+
+	b8 recreating_swapchain;
 
     Vulkan_Swapchain swapchain;
     Vulkan_Device device;
-	Vulkan_Renderpass main_renderpass;
+    Vulkan_Renderpass main_renderpass;
 
-	Auto_Array<Vulkan_Command_Buffer> graphics_command_buffers;
+    Auto_Array<Vulkan_Command_Buffer> graphics_command_buffers;
+
+	Auto_Array<VkSemaphore> image_available_semaphores;
+	Auto_Array<VkSemaphore> queue_complete_semaphores;
+
+	u32 in_flight_fence_count;
+
+	Auto_Array<Vulkan_Fence> in_flight_fences;
+	// Keep information about the fences of the images currently in flight. The
+	// fences are not owned by this array
+	Auto_Array<Vulkan_Fence*> images_in_flight;
 
     s32 (*find_memory_index)(u32 type_filter, u32 property_flags);
 };

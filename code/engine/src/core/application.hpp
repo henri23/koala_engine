@@ -18,5 +18,7 @@ KOALA_API b8 application_initialize(Game* game_inst);
 
 KOALA_API void application_run();
 
+void application_get_framebuffer_size(u32* width, u32* height);
+
 void application_shutdown();
 

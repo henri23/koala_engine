@@ -4,6 +4,8 @@
 #include "renderer/renderer_types.inl"
 #include "renderer/vulkan/vulkan_command_buffer.hpp"
 #include "renderer/vulkan/vulkan_device.hpp"
+#include "renderer/vulkan/vulkan_fence.hpp"
+#include "renderer/vulkan/vulkan_framebuffer.hpp"
 #include "renderer/vulkan/vulkan_platform.hpp"
 #include "renderer/vulkan/vulkan_renderpass.hpp"
 #include "renderer/vulkan/vulkan_swapchain.hpp"
@@ -11,9 +13,11 @@
 
 #include "containers/auto_array.hpp"
 
-internal Vulkan_Context context;
+#include "core/application.hpp"
 
-void create_command_buffers(Renderer_Backend* backend);
+internal Vulkan_Context context;
+internal u32 cached_framebuffer_width = 0;
+internal u32 cached_framebuffer_height = 0;
 
 // Forward declare messenger callback
 VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
@@ -30,6 +34,13 @@ b8 vulkan_enable_validation_layers(
 
 s32 find_memory_index(u32 type_filter, u32 property_flags);
 
+void create_command_buffers(Renderer_Backend* backend);
+
+void create_framebuffers(
+    Renderer_Backend* backend,
+    Vulkan_Swapchain* swapchain,
+    Vulkan_Renderpass* renderpass);
+
 b8 vulkan_initialize(
     Renderer_Backend* backend,
     const char* app_name,
@@ -40,6 +51,21 @@ b8 vulkan_initialize(
 
     // TODO: Custom allocator with memory arenas (Ryan Fleury tutorial)
     context.allocator = nullptr;
+
+    application_get_framebuffer_size(
+        &cached_framebuffer_width,
+        &cached_framebuffer_height);
+
+    context.framebuffer_width = (cached_framebuffer_width != 0)
+                                    ? cached_framebuffer_width
+                                    : 1280;
+
+    context.framebuffer_height = (cached_framebuffer_height != 0)
+                                     ? cached_framebuffer_height
+                                     : 720;
+
+    cached_framebuffer_width = 0;
+    cached_framebuffer_height = 0;
 
     VkApplicationInfo app_info = {VK_STRUCTURE_TYPE_APPLICATION_INFO};
 
@@ -142,6 +168,8 @@ b8 vulkan_initialize(
         return FALSE;
     }
 
+    device_level_extension_requirements.free();
+
     vulkan_swapchain_create(
         &context,
         context.framebuffer_width,
@@ -156,34 +184,122 @@ b8 vulkan_initialize(
         1.0f,
         0);
 
+    // Allocate the framebuffers
+    context.swapchain.framebuffers.reserve(context.swapchain.image_count);
+
+    create_framebuffers(
+        backend,
+        &context.swapchain,
+        &context.main_renderpass);
+
     create_command_buffers(backend);
 
-    ENGINE_INFO("Vulkan backend initialized");
+    context.image_available_semaphores
+        .reserve(context.swapchain.max_frames_in_process);
 
-    device_level_extension_requirements.free();
+    context.queue_complete_semaphores
+        .reserve(context.swapchain.max_frames_in_process);
+
+    context.in_flight_fences
+        .reserve(context.swapchain.max_frames_in_process);
+
+    for (u8 i = 0; i < context.swapchain.max_frames_in_process; ++i) {
+        VkSemaphoreCreateInfo semaphore_create_info =
+            {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+
+        vkCreateSemaphore(
+            context.device.logical_device,
+            &semaphore_create_info,
+            context.allocator,
+            &context.image_available_semaphores[i]);
+
+        vkCreateSemaphore(
+            context.device.logical_device,
+            &semaphore_create_info,
+            context.allocator,
+            &context.queue_complete_semaphores[i]);
+
+        // Create the fence in a signaled state, indicating that the first
+        // frame has been "rendered". This will prevent the application from
+        // waiting indefinetelly, because during boot-up there isn't any frame
+        // to render. However we set this state to TRUE, to trigger the next
+        // frame rendering.
+        vulkan_fence_create(
+            &context,
+            TRUE,
+            &context.in_flight_fences[i]);
+    }
+
+    context.images_in_flight.reserve(context.swapchain.image_count);
+    // At this point in time, the images_in_flight fences are not yet created,
+    // so we clear the array first. Basically the value should be nullptr when
+    // not used
+    for (u32 i = 0; i < context.swapchain.image_count; ++i) {
+        context.images_in_flight[i] = nullptr;
+    }
+
+    ENGINE_INFO("Vulkan backend initialized");
 
     return TRUE;
 }
 
 void vulkan_shutdown(
     Renderer_Backend* backend) {
+    // NOTE:	We might get problems when trying to shutdown the renderer while
+    //			there are graphic operation still going on. First, it is better
+    //			to wait until all operations have completed, so we do not get
+    //			errors.
+    vkDeviceWaitIdle(context.device.logical_device);
 
-	// Technically this is not needed because when the command pool of the 
-	// device gets destroyed during device shutdown, all associated command
-	// buffers implicitly are freed. However for clarity I will still leave 
-	// this here to remember that this operation is done
-	for(u32 i = 0; i < context.swapchain.image_count; ++i){
-		if(context.graphics_command_buffers[i].handle) {
-			vulkan_command_buffer_free(
-				&context,
-				context.device.graphics_command_pool,
-				&context.graphics_command_buffers[i]
-			);
-			context.graphics_command_buffers[i].handle = nullptr;
-		}
-	}
+	// Destroy sync objects
+    for (u8 i = 0; i < context.swapchain.max_frames_in_process; ++i) {
+        vkDestroySemaphore(
+            context.device.logical_device,
+            context.image_available_semaphores[i],
+            context.allocator);
 
-	context.graphics_command_buffers.free();
+        vkDestroySemaphore(
+            context.device.logical_device,
+            context.queue_complete_semaphores[i],
+            context.allocator);
+
+        vulkan_fence_destroy(
+            &context,
+            &context.in_flight_fences[i]);
+    }
+	
+	context.image_available_semaphores.free();
+	context.queue_complete_semaphores.free();
+	context.in_flight_fences.free();
+	context.images_in_flight.free();
+
+    // Technically this is not needed because when the command pool of the
+    // device gets destroyed during device shutdown, all associated command
+    // buffers implicitly are freed. However for clarity I will still leave
+    // this here to remember that this operation is done
+    for (u32 i = 0; i < context.swapchain.image_count; ++i) {
+        if (context.graphics_command_buffers[i].handle) {
+            vulkan_command_buffer_free(
+                &context,
+                context.device.graphics_command_pool,
+                &context.graphics_command_buffers[i]);
+            context.graphics_command_buffers[i].handle = nullptr;
+        }
+    }
+
+    context.graphics_command_buffers.free();
+
+    // First destroy the Vulkan objects
+    for (u32 i = 0; i < context.swapchain.image_count; ++i) {
+        if (context.swapchain.framebuffers.data) {
+            vulkan_framebuffer_destroy(
+                &context,
+                &context.swapchain.framebuffers[i]);
+        }
+    }
+
+    // Free heap memory where data was stored
+    context.swapchain.framebuffers.free();
 
     vulkan_renderpass_destroy(
         &context,
@@ -226,6 +342,16 @@ void vulkan_on_resized(
     Renderer_Backend* backend,
     u16 width,
     u16 height) {
+
+	cached_framebuffer_width = width;
+	cached_framebuffer_height = height;
+
+	++context.framebuffer_size_generation;
+
+	ENGINE_INFO("Vulkan renderer backend->resized: w/h/gen: %i%i%llu",
+				width,
+				height,
+				context.framebuffer_size_generation);
 }
 
 b8 vulkan_begin_frame(
@@ -439,4 +565,32 @@ void create_command_buffers(Renderer_Backend* backend) {
     }
 
     ENGINE_DEBUG("Vulkan command buffers created");
+}
+
+// We need a framebuffer per swapchain image
+void create_framebuffers(
+    Renderer_Backend* backend,
+    Vulkan_Swapchain* swapchain,
+    Vulkan_Renderpass* renderpass) {
+
+    for (u32 i = 0; i < swapchain->image_count; ++i) {
+        // For now we will have an image view and the depth buffer per image
+        u32 attachment_count = 2;
+
+        // Allocate temporarily in stach the attachments, because inside the
+        // vulkan_framebuffer_create method we will copy the attachment values
+        // in a heap allocated memory
+        VkImageView attachments[] = {
+            swapchain->views[i],
+            swapchain->depth_attachment.view};
+
+        vulkan_framebuffer_create(
+            &context,
+            renderpass,
+            context.framebuffer_width,
+            context.framebuffer_height,
+            attachment_count,
+            attachments,
+            &swapchain->framebuffers[i]);
+    }
 }

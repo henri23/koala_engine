@@ -193,6 +193,11 @@ void application_run() {
     application_shutdown();
 }
 
+void application_get_framebuffer_size(u32* width, u32* height) {
+    *width = application_state.width;
+    *width = application_state.width;
+}
+
 void application_shutdown() {
     application_state.game_inst->shutdown(application_state.game_inst);
     // Start shutting down subsystems in reverse order to the startup order

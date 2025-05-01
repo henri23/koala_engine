@@ -318,6 +318,9 @@ void vulkan_swapchain_present(
     } else if (result != VK_SUCCESS) {
         ENGINE_FATAL("Failed to present swap chain image!");
     }
+
+    context->current_frame = (context->current_frame + 1) % 
+		context->swapchain.max_frames_in_process;
 }
 
 b8 vulkan_swapchain_get_next_image_index(
