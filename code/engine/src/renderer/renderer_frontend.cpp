@@ -37,13 +37,12 @@ b8 renderer_startup(
 void renderer_shutdown() {
     backend->shutdown(backend);
 
-	renderer_backend_shutdown(backend);
+    renderer_backend_shutdown(backend);
 
     memory_deallocate(
         backend,
         sizeof(Renderer_Backend),
         Memory_Tag::RENDERER);
-
 
     ENGINE_DEBUG("Renderer subsystem shutting down...");
 }
@@ -58,14 +57,25 @@ void renderer_on_resize(
         height);
 }
 
-b8 renderer_draw_frame(Render_Packet* packet) {
-    if (backend->begin_frame(
-            backend,
-            packet->delta_time)) {
+b8 renderer_begin_frame(f32 delta_t) {
+    return backend->begin_frame(
+        backend,
+        delta_t);
+}
 
-        b8 result = backend->end_frame(
-            backend,
-            packet->delta_time);
+b8 renderer_end_frame(f32 delta_t) {
+    b8 result = backend->end_frame(
+        backend,
+        delta_t);
+
+    backend->frame_number++;
+    return result;
+}
+
+b8 renderer_draw_frame(Render_Packet* packet) {
+    if (renderer_begin_frame(packet->delta_time)) {
+
+        b8 result = renderer_end_frame(packet->delta_time);
 
         if (!result) {
             ENGINE_ERROR("renderer_end_frame failed. Application shutting down...");

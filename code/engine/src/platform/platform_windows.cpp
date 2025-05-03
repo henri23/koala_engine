@@ -230,10 +230,15 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
             return 0;
         case WM_SIZE: {
             // Get the updated size.
-            // RECT r;
-            // GetClientRect(hwnd, &r);
-            // u32 width = r.right - r.left;
-            // u32 height = r.bottom - r.top;
+            RECT r;
+            GetClientRect(hwnd, &r);
+            u32 width = r.right - r.left;
+            u32 height = r.bottom - r.top;
+
+			Event_Context context;
+			context.data.u16[0] = (u16)width;
+			context.data.u16[1] = (u16)height;
+			event_fire(Event_Code::RESIZED, nullptr, context);
 
             // TODO: Fire an event for window resize.
         } break;

@@ -39,6 +39,12 @@ b8 application_on_key(
     void* listener,
     Event_Context data);
 
+b8 application_on_resized(
+    Event_Code code,
+    void* sender,
+    void* listener,
+    Event_Context data);
+
 b8 application_initialize(Game* game_inst) {
     // TODO: Automate process of susbsytem initialization in a queue with dependency order optimization
 
@@ -81,6 +87,11 @@ b8 application_initialize(Game* game_inst) {
         ENGINE_FATAL("Failed to initialize renderer frontend");
         return FALSE;
     }
+
+    event_register_listener(
+        Event_Code::RESIZED,
+        nullptr,
+        application_on_resized);
 
     event_register_listener(
         Event_Code::APPLICATION_QUIT,
@@ -203,6 +214,11 @@ void application_shutdown() {
     // Start shutting down subsystems in reverse order to the startup order
 
     event_unregister_listener(
+        Event_Code::RESIZED,
+        nullptr,
+        application_on_resized);
+
+    event_unregister_listener(
         Event_Code::APPLICATION_QUIT,
         nullptr,
         application_on_event);
@@ -281,4 +297,44 @@ b8 application_on_key(
     }
 
     return FALSE;
+}
+
+b8 application_on_resized(
+    Event_Code code,
+    void* sender,
+    void* listener,
+    Event_Context data) {
+
+    if (code == Event_Code::RESIZED) {
+        u16 width = data.data.u16[0];
+        u16 height = data.data.u16[1];
+
+        if (width != application_state.width || height != application_state.height) {
+            application_state.width = width;
+            application_state.height = height;
+
+            ENGINE_DEBUG("Windows resize: %i, %i", width, height);
+
+            // Handle minimization
+            if (width == 0 || height == 0) {
+                ENGINE_INFO("Windows minimized, suspending application.");
+                application_state.is_suspended = TRUE;
+                return TRUE;
+            } else {
+                if (application_state.is_suspended) {
+                    ENGINE_INFO("Window restored, resuming application");
+                    application_state.is_suspended = FALSE;
+                }
+
+                application_state.game_inst->on_resize(
+                    application_state.game_inst,
+                    width,
+                    height);
+
+                renderer_on_resize(width, height);
+            }
+        }
+    }
+
+    return TRUE;
 }

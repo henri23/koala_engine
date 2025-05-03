@@ -11,6 +11,7 @@
 #include <xcb/xcb_util.h>
 
 #include "core/input.hpp"
+#include "core/event.hpp"
 #include "core/logger.hpp"
 
 #include "containers/auto_array.hpp"
@@ -258,6 +259,18 @@ b8 platform_message_pump(Platform_State* plat_state) {
                 quit_flagged = TRUE;
             }
         } break;
+		case XCB_CONFIGURE_NOTIFY: {
+			// This is also triggered when the window is moved!
+
+			xcb_configure_notify_event_t* cm = 
+				reinterpret_cast<xcb_configure_notify_event_t*>(generic_event);
+
+			Event_Context context;
+			context.data.u16[0] = (u16)cm->width;
+			context.data.u16[1] = (u16)cm->height;
+			event_fire(Event_Code::RESIZED, nullptr, context);
+
+		} break;
         default:
             break;
         }

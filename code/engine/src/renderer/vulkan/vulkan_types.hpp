@@ -113,8 +113,8 @@ struct Vulkan_Command_Buffer {
 };
 
 struct Vulkan_Fence {
-	VkFence handle;
-	b8 is_signaled;
+    VkFence handle;
+    b8 is_signaled;
 };
 
 struct Vulkan_Context {
@@ -126,19 +126,20 @@ struct Vulkan_Context {
     u32 framebuffer_width;
     u32 framebuffer_height;
 
-	// Keep two replicas for last time and current. If these two are out of
-	// sync, a resize event has ocurred
-	u64 framebuffer_size_generation;
-	u64 framebuffer_size_last_generation;
+    // Keep two replicas for last time and current. If these two are out of
+    // sync, a resize event has ocurred
+    u64 framebuffer_size_generation;
+    u64 framebuffer_size_last_generation;
 
 #ifdef DEBUG_BUILD
     VkDebugUtilsMessengerEXT debug_messenger;
 #endif
 
     u32 image_count;
-	u64 current_frame;
+    u32 image_index;
+    u64 current_frame;
 
-	b8 recreating_swapchain;
+    b8 recreating_swapchain;
 
     Vulkan_Swapchain swapchain;
     Vulkan_Device device;
@@ -146,15 +147,15 @@ struct Vulkan_Context {
 
     Auto_Array<Vulkan_Command_Buffer> graphics_command_buffers;
 
-	Auto_Array<VkSemaphore> image_available_semaphores;
-	Auto_Array<VkSemaphore> queue_complete_semaphores;
+    Auto_Array<VkSemaphore> image_available_semaphores;
+    Auto_Array<VkSemaphore> queue_complete_semaphores;
 
-	u32 in_flight_fence_count;
+    u32 in_flight_fence_count;
 
-	Auto_Array<Vulkan_Fence> in_flight_fences;
-	// Keep information about the fences of the images currently in flight. The
-	// fences are not owned by this array
-	Auto_Array<Vulkan_Fence*> images_in_flight;
+    Auto_Array<Vulkan_Fence> in_flight_fences;
+    // Keep information about the fences of the images currently in flight. The
+    // fences are not owned by this array
+    Auto_Array<Vulkan_Fence*> images_in_flight;
 
     s32 (*find_memory_index)(u32 type_filter, u32 property_flags);
 };

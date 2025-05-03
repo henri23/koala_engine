@@ -102,7 +102,7 @@ void vulkan_command_buffer_update_submitted(
     command_buffer->state = Command_Buffer_State::SUBMITTED;
 }
 
-void vulkan_command_buffer_update_reset(
+void vulkan_command_buffer_reset(
     Vulkan_Command_Buffer* command_buffer) {
 
     command_buffer->state = Command_Buffer_State::READY;

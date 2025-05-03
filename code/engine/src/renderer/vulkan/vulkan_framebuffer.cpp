@@ -22,10 +22,12 @@ void vulkan_framebuffer_create(
             sizeof(VkImageView) * attachment_count,
             Memory_Tag::RENDERER));
 
-    memory_copy(
-        out_framebuffer->attachments,
-        attachments,
-        sizeof(VkImageView) * attachment_count);
+	for(u32 i = 0; i < attachment_count; ++i)
+		out_framebuffer->attachments[i] = attachments[i];
+    // memory_copy(
+    //     out_framebuffer->attachments,
+    //     attachments,
+    //     sizeof(VkImageView) * attachment_count);
 
     out_framebuffer->renderpass = renderpass;
     out_framebuffer->attachment_count = attachment_count;
@@ -46,6 +48,10 @@ void vulkan_framebuffer_create(
             &framebuffer_info,
             context->allocator,
             &out_framebuffer->handle));
+
+    ENGINE_DEBUG("Vulkan framebuffer created with size { %u, %u }",
+                 width,
+                 height);
 }
 
 void vulkan_framebuffer_destroy(

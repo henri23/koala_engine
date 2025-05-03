@@ -12,6 +12,19 @@ void vulkan_renderpass_create(
     f32 depth,
     u32 stencil) {
 
+	out_renderpass->x = x;
+	out_renderpass->y = y;
+	out_renderpass->w = w;
+	out_renderpass->h = h;
+
+	out_renderpass->r = r;
+	out_renderpass->g = g;
+	out_renderpass->b = b;
+	out_renderpass->a = a;
+
+	out_renderpass->depth = depth;
+	out_renderpass->stencil = stencil;
+
     // Main subpass - Graphics pipeline. For the moment the renderpass will
     // have only 1 pass
     VkSubpassDescription subpass = {};

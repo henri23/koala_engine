@@ -25,13 +25,13 @@ void vulkan_command_buffer_end(
 void vulkan_command_buffer_update_submitted(
     Vulkan_Command_Buffer* command_buffer);
 
-void vulkan_command_buffer_update_reset(
+void vulkan_command_buffer_reset(
     Vulkan_Command_Buffer* command_buffer);
 
 // Allocates and begins a single use command buffer
 void vulkan_command_buffer_startup_single_use(
     Vulkan_Context* context,
-	VkCommandPool pool,
+    VkCommandPool pool,
     Vulkan_Command_Buffer* out_command_buffer);
 
 void vulkan_command_buffer_end_single_use(
