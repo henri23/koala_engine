@@ -292,43 +292,6 @@ void vulkan_swapchain_recreate(
         out_swapchain);
 }
 
-
-// TODO: move this logic to the backned file. No improvement for this sepparation
-b8 vulkan_swapchain_get_next_image_index(
-    Vulkan_Context* context,
-    Vulkan_Swapchain* swapchain,
-    u64 timeout_ns,
-    VkSemaphore image_available_semaphore,
-    VkFence fence,
-    u32* out_image_index) {
-
-    VkResult result = vkAcquireNextImageKHR(
-        context->device.logical_device,
-        swapchain->handle,
-        timeout_ns,
-        image_available_semaphore,
-        fence,
-        out_image_index);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-		// BUG: Recreate frame buffers after so that they have the most up-to-date
-		// images
-        vulkan_swapchain_recreate(
-            context,
-            context->framebuffer_width,
-            context->framebuffer_height,
-            &context->swapchain);
-
-        return FALSE;
-
-    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        ENGINE_FATAL("Failed to acquire swapchain iamge!");
-        return FALSE;
-    }
-
-    return TRUE;
-}
-
 void vulkan_swapchain_destroy(
     Vulkan_Context* context,
     Vulkan_Swapchain* swapchain) {

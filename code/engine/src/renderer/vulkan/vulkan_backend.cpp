@@ -27,23 +27,26 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
     const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
     void* user_data);
 
-b8 vulkan_create_debug_logger(
-    VkInstance* instance);
+// Debug mode helper private functions
+b8 vulkan_create_debug_logger(VkInstance* instance);
+b8 vulkan_enable_validation_layers(Auto_Array<const char*>* required_layers_array);
 
-b8 vulkan_enable_validation_layers(
-    Auto_Array<const char*>* required_layers_array);
-
+// Needed for z-buffer image format selection in vulkan_device
 s32 find_memory_index(u32 type_filter, u32 property_flags);
 
+// Graphics presentation operations
 void create_command_buffers(Renderer_Backend* backend);
-
-void create_framebuffers(
-    Renderer_Backend* backend,
-    Vulkan_Swapchain* swapchain,
-    Vulkan_Renderpass* renderpass);
-
-b8 vulkan_present_frame(Renderer_Backend* backend);
-
+void create_framebuffers(Renderer_Backend* backend, Vulkan_Swapchain* swapchain,
+                         Vulkan_Renderpass* renderpass);
+b8 present_frame(Renderer_Backend* backend);
+b8 get_next_image_index(Renderer_Backend* backend);
+// NOTE:	The recreate_swapchain function is called both when a window resize
+// 			event has ocurred and was published by the platform layer, or when
+// 			a graphics ops. (i.e. present or get_next_image_index) finished with
+// 			a non-optimal result code, which necesitate the swapchain recreation.
+// 			The flag is_resized_event descriminates between these two cases and
+// 			makes sure not to overwrite renderpass size or read cached values,
+// 			which are != 0 only when resize events occur.
 b8 recreate_swapchain(Renderer_Backend* backend, b8 is_resized_event);
 
 b8 vulkan_initialize(
@@ -421,15 +424,8 @@ b8 vulkan_begin_frame(
     // should be signaled when this operation completes. This same semaphore
     // will later be waited on by the queue submission to ensure this image is
     // available
-    if (!vulkan_swapchain_get_next_image_index(
-            &context,
-            &context.swapchain,
-            UINT64_MAX,
-            context.image_available_semaphores[context.current_frame],
-            nullptr,
-            &context.image_index)) {
+    if (!get_next_image_index(backend))
         return FALSE;
-    }
 
     // At this point we have an image index that we can render to!
 
@@ -549,16 +545,8 @@ b8 vulkan_end_frame(
     vulkan_command_buffer_update_submitted(command_buffer);
 
     // Last stage is presentation
-    // vulkan_swapchain_present(
-    //     &context,
-    //     context.device.graphics_queue,
-    //     context.device.presentation_queue,
-    //     context.queue_complete_semaphores[context.current_frame],
-    //     context.image_index);
 
-    if (!vulkan_present_frame(backend)) {
-        return FALSE;
-    }
+    if (!present_frame(backend)) return FALSE;
 
     return TRUE;
 }
@@ -801,6 +789,12 @@ b8 recreate_swapchain(Renderer_Backend* backend, b8 is_resized_event) {
         return FALSE;
     }
 
+	if(is_resized_event) {
+		ENGINE_DEBUG("recreate_swapchain triggered due to on_resized event");
+	} else {
+		ENGINE_DEBUG("recreate_swapchain triggered due to non-optimal result");
+	}
+
     // Mark as recreating if the dimensions are VALID
     context.recreating_swapchain = TRUE;
 
@@ -867,32 +861,60 @@ b8 recreate_swapchain(Renderer_Backend* backend, b8 is_resized_event) {
     create_command_buffers(backend);
 
     context.recreating_swapchain = FALSE;
+	
+	ENGINE_DEBUG("recreate_swapchain completed all operations.");
 
     return TRUE;
 }
 
-b8 vulkan_present_frame(Renderer_Backend* backend) {
+b8 get_next_image_index(Renderer_Backend* backend) {
+
+    VkResult result = vkAcquireNextImageKHR(
+        context.device.logical_device,
+        context.swapchain.handle,
+        UINT64_MAX,
+        context.image_available_semaphores[context.current_frame],
+        nullptr,
+        &context.image_index);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        if (!recreate_swapchain(backend, FALSE))
+            ENGINE_FATAL("get_next_image_index failed to recreate swapchain, due to out-of-date error result");
+
+        return FALSE;
+
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        ENGINE_FATAL("Failed to acquire swapchain iamge!");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+b8 present_frame(Renderer_Backend* backend) {
 
     VkPresentInfoKHR present_info = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = 
-		&context.queue_complete_semaphores[context.current_frame];
+    present_info.pWaitSemaphores =
+        &context.queue_complete_semaphores[context.current_frame];
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &context.swapchain.handle;
     present_info.pImageIndices = &context.image_index;
     present_info.pResults = 0;
 
-    VkResult result = vkQueuePresentKHR(context.device.presentation_queue, &present_info);
+    VkResult result =
+        vkQueuePresentKHR(context.device.presentation_queue, &present_info);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
 
         if (!recreate_swapchain(backend, FALSE))
-            ENGINE_FATAL("Failed to recreate swapchain after presentation");
+            ENGINE_FATAL("present_frame failed to recreate swapchain after presentation, due to suboptimal error code");
 
         ENGINE_DEBUG("Swapchain recreated because presentation returned out of date");
 
     } else if (result != VK_SUCCESS) {
         ENGINE_FATAL("Failed to present swap chain image!");
+        return FALSE;
     }
 
     context.current_frame = (context.current_frame + 1) %

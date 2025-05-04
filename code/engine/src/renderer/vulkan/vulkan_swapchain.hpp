@@ -17,11 +17,3 @@ void vulkan_swapchain_recreate(
 void vulkan_swapchain_destroy(
     Vulkan_Context* context,
     Vulkan_Swapchain* swapchain);
-
-b8 vulkan_swapchain_get_next_image_index(
-    Vulkan_Context* context,
-    Vulkan_Swapchain* swapchain,
-    u64 timeout_ns,
-    VkSemaphore image_available_semaphore,
-    VkFence fence,
-    u32* out_image_index);

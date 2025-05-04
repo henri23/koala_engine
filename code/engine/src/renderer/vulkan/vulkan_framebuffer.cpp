@@ -49,9 +49,9 @@ void vulkan_framebuffer_create(
             context->allocator,
             &out_framebuffer->handle));
 
-    ENGINE_DEBUG("Vulkan framebuffer created with size { %u, %u }",
-                 width,
-                 height);
+    // ENGINE_DEBUG("Vulkan framebuffer created with size { %u, %u }",
+    //              width,
+    //              height);
 }
 
 void vulkan_framebuffer_destroy(
