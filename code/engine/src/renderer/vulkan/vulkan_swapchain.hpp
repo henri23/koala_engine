@@ -25,10 +25,3 @@ b8 vulkan_swapchain_get_next_image_index(
     VkSemaphore image_available_semaphore,
     VkFence fence,
     u32* out_image_index);
-
-void vulkan_swapchain_present(
-    Vulkan_Context* context,
-    VkQueue graphics_queue,
-    VkQueue present_queue,
-    VkSemaphore render_complete_semaphore,
-    u32 present_image_index);

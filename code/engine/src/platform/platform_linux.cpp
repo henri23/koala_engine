@@ -84,7 +84,8 @@ b8 platform_startup(Platform_State* plat_state,
 
     // By using the object it is easier not to worry about the proper ordering of properties
     xcb_create_window_value_list_t value_list = {
-        .background_pixel = 0x00FFFF00, // alpha | red | green | blue
+        // .background_pixel = 0x00FFFF00, // alpha | red | green | blue
+        .background_pixel = XCB_NONE, // alpha | red | green | blue
         .event_mask = event_values};
 
     // Generate unique identifier for this window

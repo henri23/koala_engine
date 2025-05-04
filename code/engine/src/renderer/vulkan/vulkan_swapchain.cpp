@@ -6,7 +6,6 @@
 #include "defines.hpp"
 
 #include "renderer/vulkan/vulkan_device.hpp"
-#include "renderer/vulkan/vulkan_framebuffer.hpp"
 #include "renderer/vulkan/vulkan_image.hpp"
 #include "renderer/vulkan/vulkan_types.hpp"
 #include <vulkan/vulkan_core.h>
@@ -293,37 +292,8 @@ void vulkan_swapchain_recreate(
         out_swapchain);
 }
 
-void vulkan_swapchain_present(
-    Vulkan_Context* context,
-    VkQueue graphics_queue,
-    VkQueue present_queue,
-    VkSemaphore render_complete_semaphore,
-    u32 present_image_index) {
 
-    VkPresentInfoKHR present_info = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
-    present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &render_complete_semaphore;
-    present_info.swapchainCount = 1;
-    present_info.pSwapchains = &context->swapchain.handle;
-    present_info.pImageIndices = &present_image_index;
-    present_info.pResults = 0;
-
-    VkResult result = vkQueuePresentKHR(present_queue, &present_info);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        vulkan_swapchain_recreate(
-            context,
-            context->framebuffer_width,
-            context->framebuffer_height,
-            &context->swapchain);
-
-    } else if (result != VK_SUCCESS) {
-        ENGINE_FATAL("Failed to present swap chain image!");
-    }
-
-    context->current_frame = (context->current_frame + 1) %
-                             context->swapchain.max_frames_in_process;
-}
-
+// TODO: move this logic to the backned file. No improvement for this sepparation
 b8 vulkan_swapchain_get_next_image_index(
     Vulkan_Context* context,
     Vulkan_Swapchain* swapchain,
@@ -341,7 +311,7 @@ b8 vulkan_swapchain_get_next_image_index(
         out_image_index);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-		// Recreate frame buffers after so that they have the most up-to-date
+		// BUG: Recreate frame buffers after so that they have the most up-to-date
 		// images
         vulkan_swapchain_recreate(
             context,

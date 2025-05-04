@@ -215,7 +215,7 @@ f64 platform_get_absolute_time() {
 void platform_sleep(u64 ms) {
     Sleep(ms);
 }
-
+pamac reinstall ffmpegthumbs kdegraphics-thumbnailers
 LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param) {
     switch (msg) {
         case WM_ERASEBKGND:

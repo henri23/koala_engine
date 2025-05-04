@@ -42,7 +42,9 @@ void create_framebuffers(
     Vulkan_Swapchain* swapchain,
     Vulkan_Renderpass* renderpass);
 
-b8 recreate_swapchain(Renderer_Backend* backend);
+b8 vulkan_present_frame(Renderer_Backend* backend);
+
+b8 recreate_swapchain(Renderer_Backend* backend, b8 is_resized_event);
 
 b8 vulkan_initialize(
     Renderer_Backend* backend,
@@ -185,7 +187,7 @@ b8 vulkan_initialize(
         &context,
         &context.main_renderpass,
         0, 0, context.framebuffer_width, context.framebuffer_height,
-        0.0f, 0.0f, 0.2f, 1.0f,
+        0.0f, 0.0f, 0.3f, 1.0f,
         1.0f,
         0);
 
@@ -353,7 +355,7 @@ void vulkan_on_resized(
 
     ++context.framebuffer_size_generation;
 
-    ENGINE_INFO("Vulkan renderer backend->resized: w/h/gen: %i%i%llu",
+    ENGINE_INFO("Vulkan renderer backend->resized: w/h/gen: %i %i %llu",
                 width,
                 height,
                 context.framebuffer_size_generation);
@@ -396,7 +398,7 @@ b8 vulkan_begin_frame(
 
         // If the swapchain recreationg failed (because the windows was minimized)
         // boot out before unsetting the flag
-        if (!recreate_swapchain(backend)) {
+        if (!recreate_swapchain(backend, TRUE)) {
             return FALSE;
         }
 
@@ -547,12 +549,16 @@ b8 vulkan_end_frame(
     vulkan_command_buffer_update_submitted(command_buffer);
 
     // Last stage is presentation
-    vulkan_swapchain_present(
-        &context,
-        context.device.graphics_queue,
-        context.device.presentation_queue,
-        context.queue_complete_semaphores[context.current_frame],
-        context.image_index);
+    // vulkan_swapchain_present(
+    //     &context,
+    //     context.device.graphics_queue,
+    //     context.device.presentation_queue,
+    //     context.queue_complete_semaphores[context.current_frame],
+    //     context.image_index);
+
+    if (!vulkan_present_frame(backend)) {
+        return FALSE;
+    }
 
     return TRUE;
 }
@@ -784,7 +790,7 @@ void create_framebuffers(
     }
 }
 
-b8 recreate_swapchain(Renderer_Backend* backend) {
+b8 recreate_swapchain(Renderer_Backend* backend, b8 is_resized_event) {
     if (context.recreating_swapchain) {
         ENGINE_DEBUG("recreate_swapchain called when already recreating. Booting.");
         return FALSE;
@@ -818,18 +824,25 @@ b8 recreate_swapchain(Renderer_Backend* backend) {
         cached_framebuffer_height,
         &context.swapchain);
 
-    // Sync the framebuffer size with the cached values
-    context.framebuffer_width = cached_framebuffer_width;
-    context.framebuffer_height = cached_framebuffer_height;
-    context.main_renderpass.w = context.framebuffer_width;
-    context.main_renderpass.h = context.framebuffer_height;
-    cached_framebuffer_width = 0;
-    cached_framebuffer_height = 0;
+    // Sync the framebuffer size with the cached values, if the size has changed
+    if (is_resized_event) {
 
-    context.framebuffer_size_last_generation =
-        context.framebuffer_size_generation;
+        // We will have new cached framebuffer sized only if the on_resized
+        // event was called, otherwise we need to just recreate the swapchain
+        // due to not optimal results of the present or get_next_image operations
+        // of the swapchain
+        context.framebuffer_width = cached_framebuffer_width;
+        context.framebuffer_height = cached_framebuffer_height;
+        context.main_renderpass.w = context.framebuffer_width;
+        context.main_renderpass.h = context.framebuffer_height;
+        cached_framebuffer_width = 0;
+        cached_framebuffer_height = 0;
 
-	// Cleanup command buffers
+        context.framebuffer_size_last_generation =
+            context.framebuffer_size_generation;
+    }
+
+    // Cleanup command buffers
     for (u32 i = 0; i < context.swapchain.image_count; ++i) {
         vulkan_command_buffer_free(
             &context,
@@ -837,7 +850,7 @@ b8 recreate_swapchain(Renderer_Backend* backend) {
             &context.graphics_command_buffers[i]);
     }
 
-	// Destroy framebuffers
+    // Destroy framebuffers
     for (u32 i = 0; i < context.swapchain.image_count; ++i) {
         vulkan_framebuffer_destroy(
             &context,
@@ -849,11 +862,41 @@ b8 recreate_swapchain(Renderer_Backend* backend) {
     context.main_renderpass.x = 0;
     context.main_renderpass.y = 0;
 
-	create_framebuffers(backend, &context.swapchain, &context.main_renderpass);
+    create_framebuffers(backend, &context.swapchain, &context.main_renderpass);
 
-	create_command_buffers(backend);
+    create_command_buffers(backend);
 
-	context.recreating_swapchain = FALSE;
+    context.recreating_swapchain = FALSE;
+
+    return TRUE;
+}
+
+b8 vulkan_present_frame(Renderer_Backend* backend) {
+
+    VkPresentInfoKHR present_info = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores = 
+		&context.queue_complete_semaphores[context.current_frame];
+    present_info.swapchainCount = 1;
+    present_info.pSwapchains = &context.swapchain.handle;
+    present_info.pImageIndices = &context.image_index;
+    present_info.pResults = 0;
+
+    VkResult result = vkQueuePresentKHR(context.device.presentation_queue, &present_info);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+
+        if (!recreate_swapchain(backend, FALSE))
+            ENGINE_FATAL("Failed to recreate swapchain after presentation");
+
+        ENGINE_DEBUG("Swapchain recreated because presentation returned out of date");
+
+    } else if (result != VK_SUCCESS) {
+        ENGINE_FATAL("Failed to present swap chain image!");
+    }
+
+    context.current_frame = (context.current_frame + 1) %
+                            context.swapchain.max_frames_in_process;
 
     return TRUE;
 }
