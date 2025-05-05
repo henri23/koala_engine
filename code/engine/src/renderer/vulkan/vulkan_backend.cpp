@@ -29,15 +29,18 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
 
 // Debug mode helper private functions
 b8 vulkan_create_debug_logger(VkInstance* instance);
-b8 vulkan_enable_validation_layers(Auto_Array<const char*>* required_layers_array);
+b8 vulkan_enable_validation_layers(
+    Auto_Array<const char*>* required_layers_array);
 
 // Needed for z-buffer image format selection in vulkan_device
 s32 find_memory_index(u32 type_filter, u32 property_flags);
 
 // Graphics presentation operations
 void create_command_buffers(Renderer_Backend* backend);
-void create_framebuffers(Renderer_Backend* backend, Vulkan_Swapchain* swapchain,
-                         Vulkan_Renderpass* renderpass);
+void create_framebuffers(
+    Renderer_Backend* backend,
+    Vulkan_Swapchain* swapchain,
+    Vulkan_Renderpass* renderpass);
 b8 present_frame(Renderer_Backend* backend);
 b8 get_next_image_index(Renderer_Backend* backend);
 // NOTE:	The recreate_swapchain function is called both when a window resize
@@ -133,9 +136,10 @@ b8 vulkan_initialize(
     createInfo.ppEnabledLayerNames = required_layers_array.data;
 
     VK_ENSURE_SUCCESS(
-        vkCreateInstance(&createInfo,
-                         context.allocator,
-                         &context.instance));
+        vkCreateInstance(
+            &createInfo,
+            context.allocator,
+            &context.instance));
 
     required_extensions_array.free();
     required_layers_array.free();
@@ -364,7 +368,7 @@ void vulkan_on_resized(
                 context.framebuffer_size_generation);
 }
 
-b8 vulkan_begin_frame(
+b8 vulkan_frame_render(
     Renderer_Backend* backend,
     f32 delta_t) {
 
@@ -399,8 +403,8 @@ b8 vulkan_begin_frame(
             return FALSE;
         }
 
-        // If the swapchain recreationg failed (because the windows was minimized)
-        // boot out before unsetting the flag
+        // If the swapchain recreationg failed (because the windows was
+        // minimized) boot out before unsetting the flag
         if (!recreate_swapchain(backend, TRUE)) {
             return FALSE;
         }
@@ -471,7 +475,7 @@ b8 vulkan_begin_frame(
     return TRUE;
 }
 
-b8 vulkan_end_frame(
+b8 vulkan_frame_present(
     Renderer_Backend* backend,
     f32 delta_t) {
 
@@ -500,7 +504,9 @@ b8 vulkan_end_frame(
     context.images_in_flight[context.image_index] =
         &context.in_flight_fences[context.current_frame];
 
-    vulkan_fence_reset(&context, &context.in_flight_fences[context.current_frame]);
+    vulkan_fence_reset(
+        &context,
+        &context.in_flight_fences[context.current_frame]);
 
     // submit the queue and wait for the operation to complete
     // Begin queue submission
@@ -520,7 +526,7 @@ b8 vulkan_end_frame(
     submit_info.pWaitSemaphores =
         &context.image_available_semaphores[context.current_frame];
 
-    // Wait destination stage mask. VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    // Wait destination stage mask. PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     // which basically prevents the color attachment writes from executing
     // until the semaphore signals. Basically this means that only ONE frame is
     // presented
@@ -546,7 +552,8 @@ b8 vulkan_end_frame(
 
     // Last stage is presentation
 
-    if (!present_frame(backend)) return FALSE;
+    if (!present_frame(backend))
+        return FALSE;
 
     return TRUE;
 }
@@ -789,11 +796,11 @@ b8 recreate_swapchain(Renderer_Backend* backend, b8 is_resized_event) {
         return FALSE;
     }
 
-	if(is_resized_event) {
-		ENGINE_DEBUG("recreate_swapchain triggered due to on_resized event");
-	} else {
-		ENGINE_DEBUG("recreate_swapchain triggered due to non-optimal result");
-	}
+    if (is_resized_event) {
+        ENGINE_DEBUG("recreate_swapchain triggered due to on_resized event");
+    } else {
+        ENGINE_DEBUG("recreate_swapchain triggered due to non-optimal result");
+    }
 
     // Mark as recreating if the dimensions are VALID
     context.recreating_swapchain = TRUE;
@@ -861,8 +868,8 @@ b8 recreate_swapchain(Renderer_Backend* backend, b8 is_resized_event) {
     create_command_buffers(backend);
 
     context.recreating_swapchain = FALSE;
-	
-	ENGINE_DEBUG("recreate_swapchain completed all operations.");
+
+    ENGINE_DEBUG("recreate_swapchain completed all operations.");
 
     return TRUE;
 }

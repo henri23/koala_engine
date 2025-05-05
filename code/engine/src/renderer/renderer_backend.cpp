@@ -15,8 +15,8 @@ b8 renderer_backend_initialize(
         out_backend->initialize = vulkan_initialize;
         out_backend->shutdown = vulkan_shutdown;
         out_backend->resized = vulkan_on_resized;
-        out_backend->begin_frame = vulkan_begin_frame;
-        out_backend->end_frame = vulkan_end_frame;
+        out_backend->begin_frame = vulkan_frame_render;
+        out_backend->end_frame = vulkan_frame_present;
 
         return TRUE;
     }
