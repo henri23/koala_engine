@@ -215,16 +215,17 @@ f64 platform_get_absolute_time() {
 void platform_sleep(u64 ms) {
     Sleep(ms);
 }
-pamac reinstall ffmpegthumbs kdegraphics-thumbnailers
+
 LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param) {
     switch (msg) {
         case WM_ERASEBKGND:
             // Notify the OS that erasing will be handled by the application to prevent flicker.
             return 1;
-        case WM_CLOSE:
+        case WM_CLOSE: {
 			Event_Context data = {};
 			event_fire(Event_Code::APPLICATION_QUIT, nullptr, data);
 			return TRUE;
+		}
         case WM_DESTROY:
             PostQuitMessage(0);
             return 0;
