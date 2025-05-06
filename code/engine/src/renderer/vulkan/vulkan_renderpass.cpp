@@ -12,18 +12,18 @@ void vulkan_renderpass_create(
     f32 depth,
     u32 stencil) {
 
-	out_renderpass->x = x;
-	out_renderpass->y = y;
-	out_renderpass->w = w;
-	out_renderpass->h = h;
+    out_renderpass->x = x;
+    out_renderpass->y = y;
+    out_renderpass->w = w;
+    out_renderpass->h = h;
 
-	out_renderpass->r = r;
-	out_renderpass->g = g;
-	out_renderpass->b = b;
-	out_renderpass->a = a;
+    out_renderpass->r = r;
+    out_renderpass->g = g;
+    out_renderpass->b = b;
+    out_renderpass->a = a;
 
-	out_renderpass->depth = depth;
-	out_renderpass->stencil = stencil;
+    out_renderpass->depth = depth;
+    out_renderpass->stencil = stencil;
 
     // Main subpass - Graphics pipeline. For the moment the renderpass will
     // have only 1 pass
@@ -31,7 +31,7 @@ void vulkan_renderpass_create(
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
     // Prepare two attachments for color and depth
-    u32 attachment_description_count = 2;
+    constexpr u32 attachment_description_count = 2;
     VkAttachmentDescription attachment_descriptions[attachment_description_count];
 
     // We need to define what attachments will be used during rendering, i.e.
@@ -114,7 +114,7 @@ void vulkan_renderpass_create(
     subpass.preserveAttachmentCount = 0;
     subpass.pPreserveAttachments = nullptr;
 
-	// TODO: I do not understand this part good enough yet
+    // TODO: I do not understand this part good enough yet
     VkSubpassDependency dependency;
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
@@ -128,15 +128,15 @@ void vulkan_renderpass_create(
     VkRenderPassCreateInfo create_info =
         {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
 
-	// Specify the attachments
+    // Specify the attachments
     create_info.attachmentCount = attachment_description_count;
     create_info.pAttachments = attachment_descriptions;
 
-	// Define the subpasses. In this case only 1 subpass
+    // Define the subpasses. In this case only 1 subpass
     create_info.subpassCount = 1;
     create_info.pSubpasses = &subpass;
 
-	// Dependecies
+    // Dependecies
     create_info.dependencyCount = 1;
     create_info.pDependencies = &dependency;
 
