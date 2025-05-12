@@ -43,13 +43,14 @@ void create_framebuffers(
     Vulkan_Renderpass* renderpass);
 b8 present_frame(Renderer_Backend* backend);
 b8 get_next_image_index(Renderer_Backend* backend);
-// NOTE:	The recreate_swapchain function is called both when a window resize
-// 			event has ocurred and was published by the platform layer, or when
-// 			a graphics ops. (i.e. present or get_next_image_index) finished with
-// 			a non-optimal result code, which necesitate the swapchain recreation.
-// 			The flag is_resized_event descriminates between these two cases and
-// 			makes sure not to overwrite renderpass size or read cached values,
-// 			which are != 0 only when resize events occur.
+
+// The recreate_swapchain function is called both when a window resize event 
+// has ocurred and was published by the platform layer, or when a graphics ops.
+// (i.e. present or get_next_image_index) finished with a non-optimal result 
+// code, which require the swapchain recreation. The flag is_resized_event 
+// descriminates between these two cases and makes sure not to overwrite 
+// renderpass size or read cached values, which are != 0 only when resize events
+// occur.
 b8 recreate_swapchain(Renderer_Backend* backend, b8 is_resized_event);
 
 b8 vulkan_initialize(

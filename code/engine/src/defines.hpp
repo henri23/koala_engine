@@ -39,9 +39,9 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes");
 #define TRUE 1
 #define FALSE 0
 
-#define GIB ((u64)1 << 30)
-#define MIB ((u64)1 << 20)
-#define KIB ((u64)1 << 10)
+constexpr u64 GIB (1 << 30);
+constexpr u64 MIB (1 << 20);
+constexpr u64 KIB (1 << 10);
 
 #define local_persist static
 #define internal static
@@ -106,3 +106,17 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes");
 #endif
 
 #define CLAMP(value, min, max) ((value > max) ? max : (value < min) ? min : value)
+
+// Inlining - An inline function is substituted at compile time, by the compiler
+// to the location is has been called, but rather than storing the function in
+// memory and copying the result values into the destination, it completelly 
+// copies the logic into that destination, so there is no overhead from function
+// calls or result copying. Usually the compiler tries to always achieve this
+// but by using the forcing keywords, we make the compiler "try harder"
+#ifdef _MSC_VER
+#define KOALA_INLINE __forceinline
+#define KOALA_NOT_INLINE __declspec(noinline)
+#else
+#define KOALA_INLINE static inline
+#define KOALA_NOT_INLINE
+#endif

@@ -44,11 +44,11 @@ enum class Event_Code : u16 {
     MAX_EVENT_CODE = 0xFF
 };
 
-// NOTE:  When an event is processed in the bus, we should call the handlers
-//        that are interested to this event. In order for the handlers to be
-//        called, they must implement the same interface so we need to spec-
-//        ify the function signature of an event handler
-//        If a handler returns TRUE no other handler consumes the event!
+// When an event is processed in the bus, we should call the handlers that are
+// interested to this event. In order for the handlers to be called, they must
+// implement the same interface so we need to specify the function signature of
+// an event handler. If a handler returns TRUE no other handler consumes the 
+// event!
 typedef b8 (*PFN_Event_Handler)(Event_Code code, void* sender, void* listener_inst, Event_Context data);
 
 b8 event_startup();
