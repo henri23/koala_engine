@@ -49,52 +49,62 @@ KOALA_INLINE vec2 vec2_create(float x, float y) {
 }
 
 KOALA_INLINE vec2 vec2_zero() {
-    return (vec2){0.0f, 0.0f};
+    vec2 result = {0.0f, 0.0f};
+    return result;
 }
 
 KOALA_INLINE vec2 vec2_one() {
-    return (vec2){1.0f, 1.0f};
+    vec2 result = {1.0f, 1.0f};
+    return result;
 }
 
 KOALA_INLINE vec2 vec2_up() {
-    return (vec2){0.0f, 1.0f};
+    vec2 result = {0.0f, 1.0f};
+    return result;
 }
 
 KOALA_INLINE vec2 vec2_down() {
-    return (vec2){0.0f, -1.0f};
+    vec2 result = {0.0f, -1.0f};
+    return result;
 }
 
 KOALA_INLINE vec2 vec2_left() {
-    return (vec2){-1.0f, 0.0f};
+    vec2 result = {-1.0f, 0.0f};
+    return result;
 }
 
 KOALA_INLINE vec2 vec2_right() {
-    return (vec2){1.0f, 0.0f};
+    vec2 result = {2.0f, 0.0f};
+    return result;
 }
 
 // Component-wise operations
 KOALA_INLINE vec2 operator+(vec2 a, vec2 b) {
-    return (vec2){
+    vec2 result = {
         a.x + b.x,
         a.y + b.y};
+    return result;
 }
 
 KOALA_INLINE vec2 operator-(vec2 a, vec2 b) {
-    return (vec2){
+    vec2 result = {
         a.x - b.x,
         a.y - b.y};
+    return result;
 }
 
 KOALA_INLINE vec2 operator*(vec2 a, vec2 b) {
-    return (vec2){
+    vec2 result = {
         a.x * b.x,
         a.y * b.y};
+    return result;
 }
 
 KOALA_INLINE vec2 operator/(vec2 a, vec2 b) {
-    return (vec2){
+    vec2 result = {
         a.x / b.x,
         a.y / b.y};
+    return result;
 }
 
 KOALA_INLINE f32 vec2_dot(vec2 a, vec2 b) {
@@ -144,57 +154,67 @@ KOALA_INLINE vec3 vec3_create(float x, float y, float z) {
 }
 
 KOALA_INLINE vec3 vec3_zero() {
-    return (vec3){0.0f, 0.0f, 0.0f};
+    vec3 result = {0.0f, 0.0f, 0.0f};
+    return result;
 }
 
 KOALA_INLINE vec3 vec3_one() {
-    return (vec3){1.0f, 1.0f, 1.0f};
+    vec3 result = {1.0f, 1.0f, 1.0f};
+    return result;
 }
 
 KOALA_INLINE vec3 vec3_up() {
-    return (vec3){0.0f, 1.0f, 0.0f};
+    vec3 result = {0.0f, 1.0f, 0.0f};
+    return result;
 }
 
 KOALA_INLINE vec3 vec3_down() {
-    return (vec3){0.0f, -1.0f, 0.0f};
+    vec3 result = {0.0f, -1.0f, 0.0f};
+    return result;
 }
 
 KOALA_INLINE vec3 vec3_left() {
-    return (vec3){-1.0f, 0.0f, 0.0f};
+    vec3 result = {-1.0f, 0.0f, 0.0};
+    return result;
 }
 
 KOALA_INLINE vec3 vec3_right() {
-    return (vec3){1.0f, 0.0f, 0.0f};
+    vec3 result = {1.0f, 0.0f, 0.0f};
+    return result;
 }
 
 // Component-wise operations
 KOALA_INLINE vec3 operator+(vec3 a, vec3 b) {
-    return (vec3){
+    vec3 result = {
         a.x + b.x,
         a.y + b.y,
         a.z + b.z};
+    return result;
 }
 
 KOALA_INLINE vec3 operator-(vec3 a, vec3 b) {
-    return (vec3){
+    vec3 result = {
         a.x - b.x,
         a.y - b.y,
         a.z - b.z};
+    return result;
 }
 
 // Not really used a element-wise multiplication for vec3
 KOALA_INLINE vec3 operator*(vec3 a, vec3 b) {
-    return (vec3){
+    vec3 result = {
         a.x * b.x,
         a.y * b.y,
         a.z * b.z};
+    return result;
 }
 
 KOALA_INLINE vec3 operator/(vec3 a, vec3 b) {
-    return (vec3){
+    vec3 result = {
         a.x / b.x,
         a.y / b.y,
         a.z / b.z};
+    return result;
 }
 
 KOALA_INLINE f32 vec3_dot(vec3 a, vec3 b) {
@@ -202,10 +222,11 @@ KOALA_INLINE f32 vec3_dot(vec3 a, vec3 b) {
 }
 
 KOALA_INLINE vec3 vec3_cross(vec3 a, vec3 b) {
-    return (vec3){
+    vec3 result = {
         a.y * b.z - a.z * b.y,
         a.z * b.x - a.x * b.z,
         a.x * b.y - a.y * b.x}; // Output is orthogonal to the plane described by a and b
+    return result;
 }
 
 KOALA_INLINE f32 vec3_length_squared(vec3 a) {
@@ -217,10 +238,11 @@ KOALA_INLINE f32 vec3_length(vec3 a) {
 }
 
 KOALA_INLINE vec3 vec3_scale(vec3 a, f32 scalar) {
-    return (vec3){
+    vec3 result = {
         scalar * a.x,
         scalar * a.y,
         scalar * a.z};
+    return result;
 }
 
 KOALA_INLINE void vec3_norm(vec3* a) {
@@ -269,52 +291,60 @@ KOALA_INLINE vec4 vec4_create(f32 x, f32 y, f32 z, f32 w) {
 
 // Convenience function to go from homogeneous vector to simple vec3
 KOALA_INLINE vec3 vec3_from_vec4(vec4 a) {
-    return (vec3){a.x, a.y, a.z};
+    vec3 result = {a.x, a.y, a.z};
+    return result;
 }
 
 KOALA_INLINE vec4 vec3_to_vec4(vec3 a, f32 w) {
-    return (vec4){a.x, a.y, a.z, w};
+    vec4 result = {a.x, a.y, a.z, w};
+    return result;
 }
 
 KOALA_INLINE vec4 vec4_zero() {
-    return (vec4){0.0f, 0.0f, 0.0f, 0.0f};
+    vec4 result = {0.0f, 0.0f, 0.0f, 0.0f};
+    return result;
 }
 
 KOALA_INLINE vec4 vec4_one() {
-    return (vec4){1.0f, 1.0f, 1.0f, 1.0f};
+    vec4 result = {1.0f, 1.0f, 1.0f, 1.0f};
+    return result;
 }
 
 KOALA_INLINE vec4 operator+(vec4 a, vec4 b) {
-    return (vec4){
+    vec4 result = {
         a.x + b.x,
         a.y + b.y,
         a.z + b.z,
         a.w + b.w};
+    return result;
 }
 
 KOALA_INLINE vec4 operator-(vec4 a, vec4 b) {
-    return (vec4){
+    vec4 result = {
         a.x - b.x,
         a.y - b.y,
         a.z - b.z,
         a.w - b.w};
+    return result;
 }
 
 // Not really used a element-wise multiplication forvec4
 KOALA_INLINE vec4 operator*(vec4 a, vec4 b) {
-    return (vec4){
+    vec4 result = {
         a.x * b.x,
         a.y * b.y,
         a.z * b.z,
         a.w * b.w};
+    return result;
 }
 
 KOALA_INLINE vec4 operator/(vec4 a, vec4 b) {
-    return (vec4){
+    vec4 result = {
         a.x / b.x,
         a.y / b.y,
         a.z / b.z,
         a.w / b.w};
+    return result;
 }
 
 KOALA_INLINE f32 vec4_length_squared(vec4 a) {
@@ -717,7 +747,8 @@ KOALA_INLINE vec3 mat4_right(mat4 matrix) {
 
 // Quaternion functions
 KOALA_INLINE quaternion quat_identity() {
-    return (quaternion){0, 0, 0, 1.0f};
+    quaternion result = {0, 0, 0, 1.0f};
+    return result;
 }
 
 KOALA_INLINE f32 quat_normal(quaternion q) {
@@ -730,19 +761,21 @@ KOALA_INLINE f32 quat_normal(quaternion q) {
 
 KOALA_INLINE quaternion quat_norm(quaternion q) {
     f32 normal = quat_normal(q);
-    return (quaternion){
+    quaternion result = {
         q.qx / normal,
         q.qy / normal,
         q.qz / normal,
         q.qw / normal};
+    return result;
 }
 
 KOALA_INLINE quaternion quat_conjugate(quaternion q) {
-    return (quaternion){
+    quaternion result = {
         -q.qx,
         -q.qy,
         -q.qz,
         q.qw};
+    return result;
 }
 
 KOALA_INLINE quaternion quat_inv(quaternion q) {
@@ -847,7 +880,7 @@ KOALA_INLINE quaternion quat_from_axis_angle(
 
     f32 c = math_cos(half_angle);
 
-    quaternion q = (quaternion){s * axis.x, s * axis.y, s * axis.z, c};
+    quaternion q = {s * axis.x, s * axis.y, s * axis.z, c};
 
     if (normalize) {
         return quat_norm(q);
@@ -891,7 +924,7 @@ KOALA_INLINE quaternion quat_slerp(
 
         // If the inputs are too close for comfort, linearly interpolate
         // and normalize the result.
-        out_quaternion = (quaternion){
+        out_quaternion = {
             v0.x + ((v1.x - v0.x) * percentage),
             v0.y + ((v1.y - v0.y) * percentage),
             v0.z + ((v1.z - v0.z) * percentage),
@@ -913,11 +946,13 @@ KOALA_INLINE quaternion quat_slerp(
 
     f32 s1 = sin_theta / sin_theta_0;
 
-    return (quaternion){
+    quaternion result = {
         (v0.x * s0) + (v1.x * s1),
         (v0.y * s0) + (v1.y * s1),
         (v0.z * s0) + (v1.z * s1),
         (v0.w * s0) + (v1.w * s1)};
+
+	return result;
 }
 
 KOALA_INLINE f32 deg_to_rad(f32 degrees) {
