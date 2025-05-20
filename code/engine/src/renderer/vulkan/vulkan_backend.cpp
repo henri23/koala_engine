@@ -44,11 +44,11 @@ void create_framebuffers(
 b8 present_frame(Renderer_Backend* backend);
 b8 get_next_image_index(Renderer_Backend* backend);
 
-// The recreate_swapchain function is called both when a window resize event 
+// The recreate_swapchain function is called both when a window resize event
 // has ocurred and was published by the platform layer, or when a graphics ops.
-// (i.e. present or get_next_image_index) finished with a non-optimal result 
-// code, which require the swapchain recreation. The flag is_resized_event 
-// descriminates between these two cases and makes sure not to overwrite 
+// (i.e. present or get_next_image_index) finished with a non-optimal result
+// code, which require the swapchain recreation. The flag is_resized_event
+// descriminates between these two cases and makes sure not to overwrite
 // renderpass size or read cached values, which are != 0 only when resize events
 // occur.
 b8 recreate_swapchain(Renderer_Backend* backend, b8 is_resized_event);
@@ -213,26 +213,20 @@ b8 vulkan_initialize(
         .reserve(context.swapchain.max_frames_in_process);
 
     context.queue_complete_semaphores
-        .reserve(context.swapchain.max_frames_in_process);
+        .reserve(context.swapchain.image_count);
 
     context.in_flight_fences
         .reserve(context.swapchain.max_frames_in_process);
 
-    for (u8 i = 0; i < context.swapchain.max_frames_in_process; ++i) {
-        VkSemaphoreCreateInfo semaphore_create_info =
-            {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+    VkSemaphoreCreateInfo semaphore_create_info =
+        {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
 
+    for (u8 i = 0; i < context.swapchain.max_frames_in_process; ++i) {
         vkCreateSemaphore(
             context.device.logical_device,
             &semaphore_create_info,
             context.allocator,
             &context.image_available_semaphores[i]);
-
-        vkCreateSemaphore(
-            context.device.logical_device,
-            &semaphore_create_info,
-            context.allocator,
-            &context.queue_complete_semaphores[i]);
 
         // Create the fence in a signaled state, indicating that the first
         // frame has been "rendered". This will prevent the application from
@@ -250,6 +244,12 @@ b8 vulkan_initialize(
     // so we clear the array first. Basically the value should be nullptr when
     // not used
     for (u32 i = 0; i < context.swapchain.image_count; ++i) {
+        vkCreateSemaphore(
+            context.device.logical_device,
+            &semaphore_create_info,
+            context.allocator,
+            &context.queue_complete_semaphores[i]);
+
         context.images_in_flight[i] = nullptr;
     }
 
@@ -273,18 +273,12 @@ void vulkan_shutdown(
             context.image_available_semaphores[i],
             context.allocator);
 
-        vkDestroySemaphore(
-            context.device.logical_device,
-            context.queue_complete_semaphores[i],
-            context.allocator);
-
         vulkan_fence_destroy(
             &context,
             &context.in_flight_fences[i]);
     }
 
     context.image_available_semaphores.free();
-    context.queue_complete_semaphores.free();
     context.in_flight_fences.free();
     context.images_in_flight.free();
 
@@ -293,6 +287,12 @@ void vulkan_shutdown(
     // buffers implicitly are freed. However for clarity I will still leave
     // this here to remember that this operation is done
     for (u32 i = 0; i < context.swapchain.image_count; ++i) {
+
+        vkDestroySemaphore(
+            context.device.logical_device,
+            context.queue_complete_semaphores[i],
+            context.allocator);
+
         if (context.graphics_command_buffers[i].handle) {
             vulkan_command_buffer_free(
                 &context,
@@ -302,6 +302,7 @@ void vulkan_shutdown(
         }
     }
 
+    context.queue_complete_semaphores.free();
     context.graphics_command_buffers.free();
 
     // First destroy the Vulkan objects
@@ -432,6 +433,9 @@ b8 vulkan_frame_render(
     if (!get_next_image_index(backend))
         return FALSE;
 
+    // ENGINE_DEBUG("frame_render() with frame: '%d' and image index: '%d'",
+    //              context.current_frame, context.image_index);
+
     // At this point we have an image index that we can render to!
 
     // Begin recording commands
@@ -492,7 +496,7 @@ b8 vulkan_frame_present(
 
     // Make sure the previous frame is not using this image (i.e. its fence is
     // being waited on)
-    if (context.images_in_flight[context.image_index] != VK_NULL_HANDLE) {
+    if (context.images_in_flight[context.image_index] != nullptr) {
         vulkan_fence_wait(
             &context,
             context.images_in_flight[context.image_index],
@@ -500,6 +504,9 @@ b8 vulkan_frame_present(
 
         // by the time this operation completes, we are safe to perform ops.
     }
+
+    // ENGINE_DEBUG("frame_present() with frame: '%d' and image index: '%d'",
+    //              context.current_frame, context.image_index);
 
     // Mark the image fence as in-se by the current frame
     context.images_in_flight[context.image_index] =
@@ -519,7 +526,7 @@ b8 vulkan_frame_present(
     // Semaphores to be signaled when the queue is complete
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores =
-        &context.queue_complete_semaphores[context.current_frame];
+        &context.queue_complete_semaphores[context.image_index];
 
     // Wait semaphore ensures that the operation cannot begin until the image
     // is available.
@@ -886,8 +893,8 @@ b8 get_next_image_index(Renderer_Backend* backend) {
         &context.image_index);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        if (!recreate_swapchain(backend, FALSE))
-            ENGINE_FATAL("get_next_image_index failed to recreate swapchain, due to out-of-date error result");
+        // if (!recreate_swapchain(backend, FALSE))
+        //     ENGINE_FATAL("get_next_image_index failed to recreate swapchain, due to out-of-date error result");
 
         return FALSE;
 
@@ -904,7 +911,7 @@ b8 present_frame(Renderer_Backend* backend) {
     VkPresentInfoKHR present_info = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores =
-        &context.queue_complete_semaphores[context.current_frame];
+        &context.queue_complete_semaphores[context.image_index];
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &context.swapchain.handle;
     present_info.pImageIndices = &context.image_index;
@@ -915,10 +922,10 @@ b8 present_frame(Renderer_Backend* backend) {
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
 
-        if (!recreate_swapchain(backend, FALSE))
-            ENGINE_FATAL("present_frame failed to recreate swapchain after presentation, due to suboptimal error code");
+        // if (!recreate_swapchain(backend, FALSE))
+        //     ENGINE_FATAL("present_frame failed to recreate swapchain after presentation, due to suboptimal error code");
 
-        ENGINE_DEBUG("Swapchain recreated because presentation returned out of date");
+        // ENGINE_DEBUG("Swapchain recreated because presentation returned out of date");
 
     } else if (result != VK_SUCCESS) {
         ENGINE_FATAL("Failed to present swap chain image!");
