@@ -210,18 +210,18 @@ b8 vulkan_initialize(
     create_command_buffers(backend);
 
     context.image_available_semaphores
-        .reserve(context.swapchain.max_frames_in_process);
+        .reserve(context.swapchain.max_in_flight_frames);
 
-    context.queue_complete_semaphores
+    context.render_finished_semaphores
         .reserve(context.swapchain.image_count);
 
     context.in_flight_fences
-        .reserve(context.swapchain.max_frames_in_process);
+        .reserve(context.swapchain.max_in_flight_frames);
 
     VkSemaphoreCreateInfo semaphore_create_info =
         {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
 
-    for (u8 i = 0; i < context.swapchain.max_frames_in_process; ++i) {
+    for (u8 i = 0; i < context.swapchain.max_in_flight_frames; ++i) {
         vkCreateSemaphore(
             context.device.logical_device,
             &semaphore_create_info,
@@ -248,7 +248,7 @@ b8 vulkan_initialize(
             context.device.logical_device,
             &semaphore_create_info,
             context.allocator,
-            &context.queue_complete_semaphores[i]);
+            &context.render_finished_semaphores[i]);
 
         context.images_in_flight[i] = nullptr;
     }
@@ -267,7 +267,7 @@ void vulkan_shutdown(
     vkDeviceWaitIdle(context.device.logical_device);
 
     // Destroy sync objects
-    for (u8 i = 0; i < context.swapchain.max_frames_in_process; ++i) {
+    for (u8 i = 0; i < context.swapchain.max_in_flight_frames; ++i) {
         vkDestroySemaphore(
             context.device.logical_device,
             context.image_available_semaphores[i],
@@ -290,7 +290,7 @@ void vulkan_shutdown(
 
         vkDestroySemaphore(
             context.device.logical_device,
-            context.queue_complete_semaphores[i],
+            context.render_finished_semaphores[i],
             context.allocator);
 
         if (context.graphics_command_buffers[i].handle) {
@@ -302,7 +302,7 @@ void vulkan_shutdown(
         }
     }
 
-    context.queue_complete_semaphores.free();
+    context.render_finished_semaphores.free();
     context.graphics_command_buffers.free();
 
     // First destroy the Vulkan objects
@@ -526,7 +526,7 @@ b8 vulkan_frame_present(
     // Semaphores to be signaled when the queue is complete
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores =
-        &context.queue_complete_semaphores[context.image_index];
+        &context.render_finished_semaphores[context.image_index];
 
     // Wait semaphore ensures that the operation cannot begin until the image
     // is available.
@@ -911,7 +911,7 @@ b8 present_frame(Renderer_Backend* backend) {
     VkPresentInfoKHR present_info = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores =
-        &context.queue_complete_semaphores[context.image_index];
+        &context.render_finished_semaphores[context.image_index];
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &context.swapchain.handle;
     present_info.pImageIndices = &context.image_index;
@@ -933,7 +933,7 @@ b8 present_frame(Renderer_Backend* backend) {
     }
 
     context.current_frame = (context.current_frame + 1) %
-                            context.swapchain.max_frames_in_process;
+                            context.swapchain.max_in_flight_frames;
 
     return TRUE;
 }

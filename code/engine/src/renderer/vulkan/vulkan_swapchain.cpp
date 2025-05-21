@@ -101,7 +101,7 @@ void create_swapchain(
         0,
         swapchain_info->capabilities.maxImageCount);
 
-    out_swapchain->max_frames_in_process = 2;
+    out_swapchain->max_in_flight_frames = 2;
 
     create_info.minImageCount = image_count;
 

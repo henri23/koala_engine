@@ -83,7 +83,7 @@ struct Vulkan_Framebuffer {
 
 struct Vulkan_Swapchain {
     VkSwapchainKHR handle;
-    u32 max_frames_in_process;
+    u32 max_in_flight_frames;
 
     u32 image_count;
     VkImage* images;    // array of VkImages. Automatically created and cleaned
@@ -148,7 +148,7 @@ struct Vulkan_Context {
     Auto_Array<Vulkan_Command_Buffer> graphics_command_buffers;
 
     Auto_Array<VkSemaphore> image_available_semaphores;
-    Auto_Array<VkSemaphore> queue_complete_semaphores;
+    Auto_Array<VkSemaphore> render_finished_semaphores;
 
     u32 in_flight_fence_count;
 
