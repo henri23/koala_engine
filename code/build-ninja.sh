@@ -13,6 +13,7 @@ time cmake -G Ninja \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=YES \
     -DCMAKE_CXX_COMPILER=clang++ \
     -DCMAKE_BUILD_TYPE=Debug \
+	-DKOALA_BUILD_TESTS=ON \
     -B ../bin \
     .
 
@@ -23,7 +24,20 @@ cd ../bin
 ln -sf "$(pwd)/compile_commands.json" ../code/compile_commands.json
 
 # Build with Ninja
-time ninja
+echo "[BUILDER]: Building tests..."
+time ninja koala_tests
+
+echo "[BUILDER]: Running tests..."
+./tests/koala_tests
+TEST_EXIT_CODE=$?
+
+if [ $TEST_EXIT_CODE -ne 0 ]; then
+    echo "[BUILDER]: Tests failed. Aborting build."
+    exit 1
+fi
+
+echo "[BUILDER]: Building testbed..."
+time ninja testbed  # Replace with actual testbed target
 
 # Check for errors
 ERRORLEVEL=$?

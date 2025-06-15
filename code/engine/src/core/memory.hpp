@@ -5,11 +5,12 @@
 enum class Memory_Tag {
     UNKNOWN,
     DARRAY,
+	LINEAR_ALLOCATOR,
     EVENTS,
     STRING,
     GAME,
     INPUT,
-	RENDERER,
+    RENDERER,
 
     MAX_ENTRIES
 };

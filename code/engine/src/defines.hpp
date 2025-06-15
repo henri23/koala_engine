@@ -14,7 +14,7 @@ typedef float f32;
 typedef double f64;
 
 typedef int b32;
-typedef char b8;
+typedef bool b8;
 
 // Properly define static assertions
 #if defined(__clang__) || defined(__gcc__)

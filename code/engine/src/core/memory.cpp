@@ -15,13 +15,14 @@ struct Memory_Stats {
 internal Memory_Stats stats;
 
 internal const char* memory_tag_strings[(u64)Memory_Tag::MAX_ENTRIES] = {
-    "UNKNOWN  :",
-    "DARRAY   :",
-    "EVENTS   :",
-    "STRING   :",
-    "GAME     :",
-    "INPUT    :",
-    "RENDERER :",
+    "UNKNOWN  	:",
+    "DARRAY   	:",
+    "LINEAR_ALLOC	:",
+    "EVENTS   	:",
+    "STRING   	:",
+    "GAME     	:",
+    "INPUT 		:",
+    "RENDERER 	:",
 };
 
 void memory_startup() {

@@ -1,10 +1,18 @@
 #include "vulkan_fence.hpp"
 #include "core/logger.hpp"
 
+// We need a fence wrapper, because by just debuggin the fence itself, we will
+// see only a vulkan pointer to the fence, but we do not have any information
+// whether it has been signaled or not. Moreover if we do not implement some 
+// logic that if the fence has been signaled to return instead of waiting inde
+// finetly, we might run in a situation where we are waiting until we reach a 
+// timeout. This could be easily prevented by keeping track of the state of the
+// fence.
 void vulkan_fence_create(
     Vulkan_Context* context,
     b8 create_signaled,
     Vulkan_Fence* out_fence) {
+
     out_fence->is_signaled = create_signaled;
 
     VkFenceCreateInfo fence_create_info = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
@@ -70,12 +78,11 @@ b8 vulkan_fence_wait(
             ENGINE_ERROR("vk_fence_wait - An unknown error has occured");
             break;
         }
-
-        return FALSE;
-
     } else {
         return TRUE;
     }
+
+    return FALSE;
 }
 
 void vulkan_fence_reset(
