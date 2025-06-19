@@ -36,8 +36,8 @@ STATIC_ASSERT(sizeof(s64) == 8, "Expected s64 to be 8 bytes");
 STATIC_ASSERT(sizeof(f32) == 4, "Expected f32 to be 4 bytes");
 STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes");
 
-#define TRUE 1
-#define FALSE 0
+#define TRUE true
+#define FALSE false
 
 constexpr u64 GIB (1 << 30);
 constexpr u64 MIB (1 << 20);

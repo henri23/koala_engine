@@ -64,6 +64,7 @@ void linear_allocator_free_all(
     if (allocator && allocator->memory) {
         allocator->allocated = 0;
         memory_zero(allocator->memory, allocator->total_size);
+        return;
     }
 
     ENGINE_ERROR("linear_allocator_free_all - allocator not initialized");

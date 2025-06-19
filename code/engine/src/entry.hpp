@@ -9,7 +9,7 @@ extern b8 create_game(Game* game_inst);
 
 int main() {
 
-    Game game_inst;
+    Game game_inst = {};
     if(!create_game(&game_inst)) {
         ENGINE_FATAL("Failed to create game");
         return -1;

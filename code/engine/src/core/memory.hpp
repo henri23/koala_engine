@@ -5,19 +5,19 @@
 enum class Memory_Tag {
     UNKNOWN,
     DARRAY,
-	LINEAR_ALLOCATOR,
+    LINEAR_ALLOCATOR,
     EVENTS,
     STRING,
     GAME,
     INPUT,
     RENDERER,
-
+    APPLICATION,
     MAX_ENTRIES
 };
 
-void memory_startup();
+void memory_startup(u64* memory_system_mem_req, void* state);
 
-void memory_shutdown();
+void memory_shutdown(void* state);
 
 KOALA_API void* memory_allocate(
     u64 size,

@@ -5,13 +5,37 @@
 
 #include "platform/platform.hpp"
 
-b8 log_startup() {
+// Create a dummy state, which will be used later, but for the time being it is
+// just a showcase to use the linear allocator
+
+struct Logger_System_State {
+	b8 initialized;
+};
+
+internal Logger_System_State* state_ptr;
+
+// Use a Vulkan pattern for system initialization where we call each systems
+// init twice, one to retrieve the memory requirement and the second time to 
+// pass the allocated memory
+b8 log_startup(u64* memory_requirement, void* state) {
+	
+	*memory_requirement = sizeof(Logger_System_State);
+
+	if(state == nullptr) {
+		return TRUE;
+	}
+
+	state_ptr = static_cast<Logger_System_State*>(state);
+	state_ptr->initialized = TRUE;
+
     ENGINE_DEBUG("Loggin subsystem initialized");
     // TODO: create log file
     return TRUE;
 }
 
-void log_shutdown() {
+void log_shutdown(void* state) {
+	state_ptr = nullptr;
+
     ENGINE_DEBUG("Loggin subsystem shutting down...");
     // TODO: cleanup logging/write queued entries
 }

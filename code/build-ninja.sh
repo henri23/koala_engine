@@ -36,8 +36,10 @@ if [ $TEST_EXIT_CODE -ne 0 ]; then
     exit 1
 fi
 
+# ctest
+
 echo "[BUILDER]: Building testbed..."
-time ninja testbed  # Replace with actual testbed target
+time ninja testbed
 
 # Check for errors
 ERRORLEVEL=$?

@@ -11,4 +11,4 @@ add_executable(koala_tests ${TESTS_SRC})
 target_link_libraries(koala_tests PRIVATE koala_engine)
 
 enable_testing()
-add_test(NAME KoalaTests COMMAND koala_tests)
+add_test(koala_unit_tests koala_tests)

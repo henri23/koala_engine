@@ -12,7 +12,17 @@ struct Memory_Stats {
     u64 tagged_allocations[(u64)Memory_Tag::MAX_ENTRIES];
 };
 
-internal Memory_Stats stats;
+// The memory system collects and stores metrics regarding memory utilization,
+// however the memory management functions like allocate, dealloc etc. are 
+// standalone functions that should work even without a proper memory subsystem
+// initialization. This means that the functions should work even without a 
+// state. This is useful especially in unit tests, where we would like to avoid
+// memory subsystem initialization just to test our methods.
+struct Memory_System_State {
+    Memory_Stats stats;
+};
+
+internal Memory_System_State* state_ptr = nullptr;
 
 internal const char* memory_tag_strings[(u64)Memory_Tag::MAX_ENTRIES] = {
     "UNKNOWN  	:",
@@ -23,16 +33,22 @@ internal const char* memory_tag_strings[(u64)Memory_Tag::MAX_ENTRIES] = {
     "GAME     	:",
     "INPUT 		:",
     "RENDERER 	:",
-};
+    "APPLICATION	:"};
 
-void memory_startup() {
-    // We do not zero when startup is called because the memory is available
-    // before the application is started
-    // platform_zero_memory(&stats, sizeof(stats));
+void memory_startup(u64* memory_system_mem_req, void* state) {
+    *memory_system_mem_req = sizeof(Memory_System_State);
+
+    if (state == nullptr) {
+        return;
+    }
+
+    state_ptr = static_cast<Memory_System_State*>(state);
+
+    platform_zero_memory(&state_ptr->stats, sizeof(Memory_Stats));
     ENGINE_DEBUG("Memory subsystem initialized");
 }
 
-void memory_shutdown() {
+void memory_shutdown(void* state) {
     ENGINE_DEBUG("Memory subsystem shutting down...");
 }
 
@@ -41,8 +57,11 @@ void* memory_allocate(u64 size, Memory_Tag tag) {
         ENGINE_WARN("The memory is being initialized as UNKNOWN. Please allocated it with the proper tag");
     }
 
-    stats.tagged_allocations[(u64)tag] += size;
-    stats.total_allocated += size;
+    if (state_ptr) {
+
+        state_ptr->stats.tagged_allocations[(u64)tag] += size;
+        state_ptr->stats.total_allocated += size;
+    }
 
     // Every chunk of memory will be set to 0 automatically
     void* block = platform_allocate(size, TRUE);
@@ -53,8 +72,12 @@ void* memory_allocate(u64 size, Memory_Tag tag) {
 }
 
 void memory_deallocate(void* block, u64 size, Memory_Tag tag) {
-    stats.tagged_allocations[(u64)tag] -= size;
-    stats.total_allocated -= size;
+
+    if (state_ptr) {
+
+        state_ptr->stats.tagged_allocations[(u64)tag] -= size;
+        state_ptr->stats.total_allocated -= size;
+    }
 
     return platform_free(block, TRUE);
 }
@@ -109,19 +132,19 @@ char* memory_get_current_usage() {
         char usage_unit[4] = "XiB";
         f32 amount = 1.0f;
 
-        if (stats.tagged_allocations[i] >= GIB) {
+        if (state_ptr->stats.tagged_allocations[i] >= GIB) {
             usage_unit[0] = 'G';
-            amount = (float)stats.tagged_allocations[i] / GIB;
-        } else if (stats.tagged_allocations[i] >= MIB) {
+            amount = (float)state_ptr->stats.tagged_allocations[i] / GIB;
+        } else if (state_ptr->stats.tagged_allocations[i] >= MIB) {
             usage_unit[0] = 'M';
-            amount = (float)stats.tagged_allocations[i] / MIB;
-        } else if (stats.tagged_allocations[i] >= KIB) {
+            amount = (float)state_ptr->stats.tagged_allocations[i] / MIB;
+        } else if (state_ptr->stats.tagged_allocations[i] >= KIB) {
             usage_unit[0] = 'K';
-            amount = (float)stats.tagged_allocations[i] / KIB;
+            amount = (float)state_ptr->stats.tagged_allocations[i] / KIB;
         } else {
             usage_unit[0] = 'B';
             usage_unit[1] = 0; // Append a null termination character to overwrite the end of the string
-            amount = (float)stats.tagged_allocations[i];
+            amount = (float)state_ptr->stats.tagged_allocations[i];
         }
 
         // snprintf returns the number of writen characters (aka bytes). It returns negative number if there was an error
