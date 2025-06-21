@@ -31,6 +31,18 @@ struct Application_State {
 
     u64 memory_system_mem_req;
     void* memory_system_state;
+
+    u64 event_system_mem_req;
+    void* event_system_state;
+
+    u64 input_system_mem_req;
+    void* input_system_state;
+
+    u64 platform_system_mem_req;
+    void* platform_system_state;
+
+    u64 renderer_system_mem_req;
+    void* renderer_system_state;
 };
 
 // Store a pointer for easy access to the application state, since the app state
@@ -93,11 +105,9 @@ b8 application_initialize(Game* game_inst) {
 
     // 1. Logging subsystem
     log_startup(&application_state->logging_system_mem_req, nullptr);
-
     application_state->logging_system_state = linear_allocator_allocate(
         &application_state->systems_allocator,
         application_state->logging_system_mem_req);
-
     if (!log_startup(
             &application_state->logging_system_mem_req,
             application_state->logging_system_state)) {
@@ -105,7 +115,7 @@ b8 application_initialize(Game* game_inst) {
         return FALSE;
     }
 
-	// 2. Platform layer
+    // 2. Platform layer
     if (!platform_startup(
             &application_state->platform_state,
             game_inst->config.name,
@@ -116,24 +126,37 @@ b8 application_initialize(Game* game_inst) {
         return FALSE;
     }
 
-	// 3. Memory subsystem
+    // 3. Memory subsystem
     memory_startup(&application_state->memory_system_mem_req, nullptr);
-
     application_state->memory_system_state = linear_allocator_allocate(
         &application_state->systems_allocator,
         application_state->memory_system_mem_req);
-
     memory_startup(
-            &application_state->memory_system_mem_req,
-            application_state->memory_system_state);
+        &application_state->memory_system_mem_req,
+        application_state->memory_system_state);
 
-    if (!event_startup()) {
+    // 4. Event subsystem
+    event_startup(&application_state->event_system_mem_req, nullptr);
+    application_state->event_system_state = linear_allocator_allocate(
+        &application_state->systems_allocator,
+        application_state->event_system_mem_req);
+    if (!event_startup(
+            &application_state->event_system_mem_req,
+            application_state->event_system_state)) {
         ENGINE_ERROR("Failed to start event subsystem. Already initialized!");
         return FALSE;
     }
 
-    input_startup(); // Depends on: logger, event, memory
+    // 5. Input subsystem - Depends on: logger, event, memory
+    input_startup(&application_state->input_system_mem_req, nullptr); 
+    application_state->input_system_state = linear_allocator_allocate(
+        &application_state->systems_allocator,
+        application_state->input_system_mem_req);
+    input_startup(
+        &application_state->input_system_mem_req,
+        application_state->input_system_state);
 
+    // 6. Renderer startup (Call frontend but implicitly starting backend)
     if (!renderer_startup(
             application_state->game_inst->config.name,
             &(application_state->platform_state))) {
@@ -141,6 +164,7 @@ b8 application_initialize(Game* game_inst) {
         return FALSE;
     }
 
+    // Event listener registration
     event_register_listener(
         Event_Code::RESIZED,
         nullptr,
@@ -287,9 +311,9 @@ void application_shutdown() {
         application_on_key);
 
     renderer_shutdown();
-    input_shutdown();
-    event_shutdown();
-    memory_shutdown(&application_state->memory_system_state);
+    input_shutdown(application_state->input_system_state);
+    event_shutdown(application_state->event_system_state);
+    memory_shutdown(application_state->memory_system_state);
     platform_shutdown(&application_state->platform_state);
     log_shutdown(application_state->logging_system_state);
 

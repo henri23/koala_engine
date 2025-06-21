@@ -48,3 +48,5 @@ KOALA_API void* memory_set(
     u64 size);
 
 KOALA_API char* memory_get_current_usage();
+
+KOALA_API u64 memory_get_allocations_count();

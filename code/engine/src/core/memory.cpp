@@ -13,13 +13,14 @@ struct Memory_Stats {
 };
 
 // The memory system collects and stores metrics regarding memory utilization,
-// however the memory management functions like allocate, dealloc etc. are 
+// however the memory management functions like allocate, dealloc etc. are
 // standalone functions that should work even without a proper memory subsystem
-// initialization. This means that the functions should work even without a 
+// initialization. This means that the functions should work even without a
 // state. This is useful especially in unit tests, where we would like to avoid
 // memory subsystem initialization just to test our methods.
 struct Memory_System_State {
     Memory_Stats stats;
+    u64 allocations_count;
 };
 
 internal Memory_System_State* state_ptr = nullptr;
@@ -43,6 +44,7 @@ void memory_startup(u64* memory_system_mem_req, void* state) {
     }
 
     state_ptr = static_cast<Memory_System_State*>(state);
+    state_ptr->allocations_count = 0;
 
     platform_zero_memory(&state_ptr->stats, sizeof(Memory_Stats));
     ENGINE_DEBUG("Memory subsystem initialized");
@@ -61,6 +63,7 @@ void* memory_allocate(u64 size, Memory_Tag tag) {
 
         state_ptr->stats.tagged_allocations[(u64)tag] += size;
         state_ptr->stats.total_allocated += size;
+        state_ptr->allocations_count++;
     }
 
     // Every chunk of memory will be set to 0 automatically
@@ -164,4 +167,11 @@ char* memory_get_current_usage() {
     memory_copy(copy, utilization_buffer, length + 1);
 
     return copy;
+}
+
+u64 memory_get_allocations_count() {
+    if (state_ptr) {
+        return state_ptr->allocations_count;
+    }
+    return 0;
 }

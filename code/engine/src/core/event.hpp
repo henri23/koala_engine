@@ -51,8 +51,8 @@ enum class Event_Code : u16 {
 // event!
 typedef b8 (*PFN_Event_Handler)(Event_Code code, void* sender, void* listener_inst, Event_Context data);
 
-b8 event_startup();
-void event_shutdown();
+b8 event_startup(u64* mem_req, void* state);
+void event_shutdown(void* state);
 
 KOALA_API b8 event_register_listener(
     Event_Code code,

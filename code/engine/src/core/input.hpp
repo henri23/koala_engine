@@ -163,8 +163,8 @@ enum Key_Modifiers {
 };
 
 // Functions called by the application layer to initialize the input subsystem
-void input_startup();
-void input_shutdown();
+void input_startup(u64* mem_req, void* state);
+void input_shutdown(void* state);
 void input_update(f64 delta_time);
 
 // NOTE: Functions to set the state (Called by platform layer)

@@ -21,43 +21,43 @@ struct Event_System_State {
     Event_Code_Entry entries[MAX_EVENT_ENTRIES];
 };
 
-internal Event_System_State state;
-internal b8 is_initialized = FALSE;
+internal Event_System_State* state_ptr = nullptr;
 
-b8 event_startup() {
-    if (is_initialized == TRUE) {
-        ENGINE_WARN("Event subsystem is already initialized");
-        return FALSE;
+b8 event_startup(u64* mem_req, void* state) {
+
+    *mem_req = sizeof(Event_System_State);
+
+    if (state == nullptr) {
+        return TRUE;
     }
 
-    memory_zero(&state, sizeof(state));
+    state_ptr = static_cast<Event_System_State*>(state);
+
+    memory_zero(state_ptr, sizeof(Event_System_State));
 
     ENGINE_DEBUG("Event subsystem initalized");
-
-    is_initialized = TRUE;
 
     return TRUE;
 }
 
-void event_shutdown() {
+void event_shutdown(void* state) {
     for (u32 i = 0; i < MAX_EVENT_ENTRIES; ++i)
-        if (state.entries[i].event_listeners.data) {
-            state.entries[i].event_listeners.free();
+        if (state_ptr->entries[i].event_listeners.data) {
+            state_ptr->entries[i].event_listeners.free();
         }
 
+	state_ptr = nullptr;
+
     ENGINE_DEBUG("Event subsystem shutting down...");
-    is_initialized = FALSE;
 }
 
 b8 event_register_listener(
     Event_Code code,
     void* listener,
     PFN_Event_Handler on_event) {
-    if (is_initialized == FALSE)
-        return FALSE;
 
-    Auto_Array<Registered_Event>* events_array = 
-		&state.entries[(u16)code].event_listeners;
+    Auto_Array<Registered_Event>* events_array =
+        &state_ptr->entries[(u16)code].event_listeners;
 
     // Check if listener is already present
     for (u32 i = 0; i < events_array->length; ++i) {
@@ -82,16 +82,13 @@ b8 event_unregister_listener(
     Event_Code code,
     void* listener,
     PFN_Event_Handler on_event) {
-    if (is_initialized == FALSE) {
-        return FALSE;
-    }
 
     // Check if array is initiliazed
-    if (!state.entries[(u16)code].event_listeners.data)
+    if (!state_ptr->entries[(u16)code].event_listeners.data)
         return FALSE;
 
-    Auto_Array<Registered_Event>* events_array = 
-		&state.entries[(u16)code].event_listeners;
+    Auto_Array<Registered_Event>* events_array =
+        &state_ptr->entries[(u16)code].event_listeners;
 
     for (u32 i = 0; i < events_array->length; ++i) {
         Registered_Event e = (*events_array)[i];
@@ -100,7 +97,7 @@ b8 event_unregister_listener(
             e.listener == listener &&
             e.callback == on_event) {
 
-			events_array->pop_at(i);
+            events_array->pop_at(i);
 
             return TRUE;
         }
@@ -114,15 +111,12 @@ b8 event_fire(
     Event_Code code,
     void* sender,
     Event_Context context) {
-    if (is_initialized == FALSE) {
-        return FALSE;
-    }
 
     // Check if array is initiliazed
-    if (!state.entries[(u16)code].event_listeners.data)
+    if (!state_ptr->entries[(u16)code].event_listeners.data)
         return FALSE;
 
-    Auto_Array<Registered_Event>* events = &state.entries[(u16)code].event_listeners;
+    Auto_Array<Registered_Event>* events = &state_ptr->entries[(u16)code].event_listeners;
 
     // Check if listener is already present
     for (u32 i = 0; i < events->length; ++i) {
