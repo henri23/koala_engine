@@ -1,10 +1,8 @@
-@REM cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" && set' | ForEach-Object {
-@REM    $parts = $_ -split '=', 2
-@REM    if ($parts.Length -eq 2) {
-@REM       Set-Item -Path "Env:$($parts[0])" -Value $parts[1]
-@REM    }
-@REM }
-@REM Write-Host "[PowerShell] MSVC environment loaded ✅"
+:: Call vcvars64.bat to set up MSVC environment
+call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+
+:: Now you're inside the MSVC environment
+echo [BUILDER]: MSVC environment loaded 
 
 @echo off
 setlocal
@@ -16,8 +14,13 @@ echo ==============================================
 echo [BUILDER]: Building everything with cl + Ninja...
 
 REM Ensure clean build directory
-if exist %BUILD_DIR% rmdir /S /Q %BUILD_DIR%
-mkdir %BUILD_DIR%
+:: Only create the build directory if it doesn't already exist
+if not exist %BUILD_DIR% (
+    echo [Builder] Creating build directory: %BUILD_DIR%
+    mkdir %BUILD_DIR%
+) else (
+    echo [Builder] Build directory already exists: %BUILD_DIR%
+)
 
 REM Configure with cl
 cmake -G "Ninja" ^
