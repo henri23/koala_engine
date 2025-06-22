@@ -17,7 +17,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_win32.h>
 
-struct Internal_State {
+struct Platform_State {
     HINSTANCE h_instance;
     HWND hwnd;
 };
@@ -26,29 +26,37 @@ struct Internal_State {
 static f64 clock_frequency;
 static LARGE_INTEGER start_time;
 
+internal Platform_State* state_ptr = nullptr;
+
 LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param);
 
 b8 platform_startup(
-    Platform_State *plat_state,
+	u64* mem_req,
+	void* state,
     const char *application_name,
     s32 x,
     s32 y,
     s32 width,
     s32 height) {
-    plat_state->internal_state = malloc(sizeof(Internal_State));
-    Internal_State *state = (Internal_State *)plat_state->internal_state;
+	*mem_req = sizeof(Platform_State);
 
-    state->h_instance = GetModuleHandleA(0);
+	if(state == nullptr) {
+		return TRUE;
+	}
+
+	state_ptr = static_cast<Platform_State*>(state);
+
+    state_ptr->h_instance = GetModuleHandleA(0);
 
     // Setup and register window class.
-    HICON icon = LoadIcon(state->h_instance, IDI_APPLICATION);
+    HICON icon = LoadIcon(state_ptr->h_instance, IDI_APPLICATION);
     WNDCLASSA wc;
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;  // Get double-clicks
     wc.lpfnWndProc = win32_process_message;
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
-    wc.hInstance = state->h_instance;
+    wc.hInstance = state_ptr->h_instance;
     wc.hIcon = icon;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);  // NULL; // Manage the cursor manually
     wc.hbrBackground = NULL;                   // Transparent
@@ -92,7 +100,7 @@ b8 platform_startup(
     HWND handle = CreateWindowExA(
         window_ex_style, "koala_window_class", application_name,
         window_style, window_x, window_y, window_width, window_height,
-        0, 0, state->h_instance, 0);
+        0, 0, state_ptr->h_instance, 0);
 
     if (handle == 0) {
         MessageBoxA(NULL, "Window creation failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
@@ -100,7 +108,7 @@ b8 platform_startup(
         ENGINE_FATAL("Window creation failed!");
         return FALSE;
     } else {
-        state->hwnd = handle;
+        state_ptr->hwnd = handle;
     }
 
     // Show the window
@@ -108,7 +116,7 @@ b8 platform_startup(
     s32 show_window_command_flags = should_activate ? SW_SHOW : SW_SHOWNOACTIVATE;
     // If initially minimized, use SW_MINIMIZE : SW_SHOWMINNOACTIVE;
     // If initially maximized, use SW_SHOWMAXIMIZED : SW_MAXIMIZE
-    ShowWindow(state->hwnd, show_window_command_flags);
+    ShowWindow(state_ptr->hwnd, show_window_command_flags);
 
     // Clock setup
     LARGE_INTEGER frequency;
@@ -119,17 +127,19 @@ b8 platform_startup(
     return TRUE;
 }
 
-void platform_shutdown(Platform_State *plat_state) {
+void platform_shutdown(void* state) {
     // Simply cold-cast to the known type.
-    Internal_State *state = (Internal_State *)plat_state->internal_state;
+    Platform_state_ptr *state_ptr = (Platform_state_ptr *)plat_state_ptr->internal_state_ptr;
 
-    if (state->hwnd) {
-        DestroyWindow(state->hwnd);
-        state->hwnd = 0;
+    if (state_ptr->hwnd) {
+        DestroyWindow(state_ptr->hwnd);
+        state_ptr->hwnd = 0;
     }
+
+	state_ptr = nullptr;
 }
 
-b8 platform_message_pump(Platform_State *plat_state) {
+b8 platform_message_pump() {
     MSG message;
     while (PeekMessageA(&message, NULL, 0, 0, PM_REMOVE)) {
         TranslateMessage(&message);
@@ -179,15 +189,14 @@ void platform_get_required_extensions(Auto_Array<const char*>* required_extensio
     required_extensions->add("VK_KHR_win32_surface");
 }
 
-b8 platform_create_vulkan_surface(Vulkan_Context* context, Platform_State* plat_state) {
+b8 platform_create_vulkan_surface(Vulkan_Context* context) {
 
     ENGINE_INFO("Creating Vulkan WIN32 surface...");
-    Internal_State* state = static_cast<Internal_State*>(plat_state->internal_state);
 
     VkWin32SurfaceCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-    createInfo.hwnd = state->hwnd;
-    createInfo.hinstance = state->h_instance;
+    createInfo.hwnd = state_ptr->hwnd;
+    createInfo.hinstance = state_ptr->h_instance;
 
     VK_ENSURE_SUCCESS(vkCreateWin32SurfaceKHR(context->instance, &createInfo, nullptr, &context->surface));
 

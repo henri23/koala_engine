@@ -3,11 +3,9 @@
 #include "renderer/renderer_types.inl"
 
 struct Static_Mesh_Data;
-struct Platform_State;
 
 b8 renderer_startup(
-    const char* application_name,
-    struct Platform_State* plat_state);
+    const char* application_name);
 
 void renderer_shutdown();
 

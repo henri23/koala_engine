@@ -4,10 +4,7 @@
 
 b8 renderer_backend_initialize(
     Renderer_Backend_Type type,
-    struct Platform_State* plat_state,
     Renderer_Backend* out_backend) {
-
-    out_backend->plat_state = plat_state;
 
     // Instantiate specific backend
     switch (type) {

@@ -8,8 +8,7 @@
 internal Renderer_Backend* backend;
 
 b8 renderer_startup(
-    const char* application_name,
-    struct Platform_State* plat_state) {
+    const char* application_name) {
 
     backend = static_cast<Renderer_Backend*>(
         memory_allocate(
@@ -18,7 +17,6 @@ b8 renderer_startup(
 
     if (!renderer_backend_initialize(
             Renderer_Backend_Type::VULKAN,
-            plat_state,
             backend)) {
 
         ENGINE_INFO("Failed to initialize renderer backend");
@@ -27,8 +25,7 @@ b8 renderer_startup(
 
     backend->initialize(
         backend,
-        application_name,
-        plat_state);
+        application_name);
 
     ENGINE_DEBUG("Renderer subsystem initialized");
     return TRUE;

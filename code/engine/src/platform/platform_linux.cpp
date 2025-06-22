@@ -28,7 +28,7 @@
 #include <unistd.h>
 #endif
 
-struct Internal_State {
+struct Platform_State {
     xcb_connection_t* connection;
     int screen_number;
     xcb_screen_t* screen;
@@ -39,22 +39,30 @@ struct Internal_State {
     xcb_key_symbols_t* key_symbols;
 };
 
+internal Platform_State* state_ptr = nullptr;
+
 Keyboard_Key translate_key(xcb_keysym_t xcb_symbol);
 
-b8 platform_startup(Platform_State* plat_state,
+b8 platform_startup(u64* mem_req,
+					void* state,
                     const char* application_name,
                     s32 x,
                     s32 y,
                     s32 width,
                     s32 height) {
-    // Allocate and cold cast the internal state pointer to the application state
-    plat_state->internal_state = malloc(sizeof(Internal_State));
-    Internal_State* state = static_cast<Internal_State*>(plat_state->internal_state);
+	
+	*mem_req = sizeof(Platform_State);
+
+	if(state == nullptr) {
+		return TRUE;
+	}
+
+	state_ptr = static_cast<Platform_State*>(state);
 
     // Establish xcb connection with the preferred (current) screen
-    state->connection = xcb_connect(nullptr, &state->screen_number);
+    state_ptr->connection = xcb_connect(nullptr, &state_ptr->screen_number);
 
-    if (xcb_connection_has_error(state->connection)) {
+    if (xcb_connection_has_error(state_ptr->connection)) {
         ENGINE_FATAL("Error while establishing XCB connection");
         return FALSE;
     }
@@ -62,19 +70,19 @@ b8 platform_startup(Platform_State* plat_state,
     xcb_intern_atom_cookie_t intern_atom_cookie;
     xcb_intern_atom_reply_t* intern_atom_reply;
 
-    intern_atom_cookie = xcb_intern_atom(state->connection, 0, 12, "WM_PROTOCOLS");
-    intern_atom_reply = xcb_intern_atom_reply(state->connection, intern_atom_cookie, nullptr);
-    state->wm_protocols_property = intern_atom_reply->atom;
+    intern_atom_cookie = xcb_intern_atom(state_ptr->connection, 0, 12, "WM_PROTOCOLS");
+    intern_atom_reply = xcb_intern_atom_reply(state_ptr->connection, intern_atom_cookie, nullptr);
+    state_ptr->wm_protocols_property = intern_atom_reply->atom;
     free(intern_atom_reply);
 
-    intern_atom_cookie = xcb_intern_atom(state->connection, 0, 16, "WM_DELETE_WINDOW");
-    intern_atom_reply = xcb_intern_atom_reply(state->connection, intern_atom_cookie, nullptr);
-    state->wm_delete_protocol = intern_atom_reply->atom;
+    intern_atom_cookie = xcb_intern_atom(state_ptr->connection, 0, 16, "WM_DELETE_WINDOW");
+    intern_atom_reply = xcb_intern_atom_reply(state_ptr->connection, intern_atom_cookie, nullptr);
+    state_ptr->wm_delete_protocol = intern_atom_reply->atom;
     free(intern_atom_reply);
 
     // Get screen from screen number using the auxilliary function.
     // Alternativelly we could loop over all the screens with an iterator and get the screen with the proper id
-    state->screen = xcb_aux_get_screen(state->connection, state->screen_number);
+    state_ptr->screen = xcb_aux_get_screen(state_ptr->connection, state_ptr->screen_number);
 
     // NOTE: By defaul the X server will not send any event so we need to specify which events we want to receive
     u32 event_values = XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
@@ -89,42 +97,42 @@ b8 platform_startup(Platform_State* plat_state,
         .event_mask = event_values};
 
     // Generate unique identifier for this window
-    state->window_id = xcb_generate_id(state->connection);
+    state_ptr->window_id = xcb_generate_id(state_ptr->connection);
 
-    state->window_cookie = xcb_create_window_aux(
-        state->connection,
-        state->screen->root_depth,
-        state->window_id,
-        state->screen->root,
+    state_ptr->window_cookie = xcb_create_window_aux(
+        state_ptr->connection,
+        state_ptr->screen->root_depth,
+        state_ptr->window_id,
+        state_ptr->screen->root,
         x,
         y,
         width,
         height,
         0,
         XCB_WINDOW_CLASS_INPUT_OUTPUT,
-        state->screen->root_visual,
+        state_ptr->screen->root_visual,
         XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK,
         &value_list);
 
     // Change the title
     xcb_icccm_set_wm_name(
-        state->connection,
-        state->window_id,
+        state_ptr->connection,
+        state_ptr->window_id,
         XCB_ATOM_STRING,
         8,
         strlen(application_name),
         application_name);
 
-    xcb_map_window(state->connection, state->window_id);
+    xcb_map_window(state_ptr->connection, state_ptr->window_id);
 
-    s32 stream_flush = xcb_flush(state->connection);
+    s32 stream_flush = xcb_flush(state_ptr->connection);
     if (stream_flush <= 0) {
         ENGINE_FATAL("Error while flushing the stream: %d", stream_flush);
         return FALSE;
     }
 
-    state->key_symbols = xcb_key_symbols_alloc(state->connection);
-    if (!state->key_symbols) {
+    state_ptr->key_symbols = xcb_key_symbols_alloc(state_ptr->connection);
+    if (!state_ptr->key_symbols) {
         ENGINE_FATAL("Error while creating key map");
         return FALSE;
     }
@@ -140,14 +148,13 @@ void platform_get_required_extensions(Auto_Array<const char*>* required_extensio
     required_extensions->add("VK_KHR_xcb_surface");
 }
 
-b8 platform_create_vulkan_surface(Vulkan_Context* context, Platform_State* plat_state) {
+b8 platform_create_vulkan_surface(Vulkan_Context* context) {
 
     ENGINE_INFO("Creating Vulkan XCB surface...");
-    Internal_State* state = static_cast<Internal_State*>(plat_state->internal_state);
 
     VkXcbSurfaceCreateInfoKHR create_info = {VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR};
-    create_info.connection = state->connection;
-    create_info.window = state->window_id;
+    create_info.connection = state_ptr->connection;
+    create_info.window = state_ptr->window_id;
 
     VK_ENSURE_SUCCESS(
         vkCreateXcbSurfaceKHR(
@@ -161,14 +168,12 @@ b8 platform_create_vulkan_surface(Vulkan_Context* context, Platform_State* plat_
     return TRUE;
 }
 
-b8 platform_message_pump(Platform_State* plat_state) {
-    Internal_State* state = static_cast<Internal_State*>(plat_state->internal_state);
-
+b8 platform_message_pump() {
     xcb_generic_event_t* generic_event;
 
     b8 quit_flagged = FALSE;
 
-    while ((generic_event = xcb_poll_for_event(state->connection))) {
+    while ((generic_event = xcb_poll_for_event(state_ptr->connection))) {
         switch (XCB_EVENT_RESPONSE_TYPE(generic_event)) {
         case XCB_EXPOSE: {
         } break;
@@ -178,7 +183,7 @@ b8 platform_message_pump(Platform_State* plat_state) {
                 generic_event);
 
             xcb_keysym_t key_symbol = xcb_key_symbols_get_keysym(
-                state->key_symbols,
+                state_ptr->key_symbols,
                 ev->detail,
                 0);
 
@@ -256,7 +261,7 @@ b8 platform_message_pump(Platform_State* plat_state) {
             xcb_client_message_event_t* cm =
                 reinterpret_cast<xcb_client_message_event_t*>(generic_event);
 
-            if (cm->data.data32[0] == state->wm_delete_protocol) {
+            if (cm->data.data32[0] == state_ptr->wm_delete_protocol) {
                 quit_flagged = TRUE;
             }
         } break;
@@ -288,14 +293,13 @@ b8 platform_message_pump(Platform_State* plat_state) {
     return !quit_flagged;
 }
 
-void platform_shutdown(Platform_State* plat_state) {
-    Internal_State* state = static_cast<Internal_State*>(plat_state->internal_state);
+void platform_shutdown(void* state) {
 
-    xcb_key_symbols_free(state->key_symbols);
-    xcb_destroy_window(state->connection, state->window_id);
-    xcb_disconnect(state->connection);
+    xcb_key_symbols_free(state_ptr->key_symbols);
+    xcb_destroy_window(state_ptr->connection, state_ptr->window_id);
+    xcb_disconnect(state_ptr->connection);
 
-    platform_free(plat_state->internal_state, TRUE);
+	state_ptr = nullptr;
 
     ENGINE_DEBUG("Platform layer shutting down...");
 }

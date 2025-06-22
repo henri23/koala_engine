@@ -7,4 +7,4 @@ struct Platform_State;
 
 void platform_get_required_extensions(Auto_Array<const char*>* required_extensions);
 
-b8 platform_create_vulkan_surface(Vulkan_Context* context, Platform_State* plat_state);
+b8 platform_create_vulkan_surface(Vulkan_Context* context);

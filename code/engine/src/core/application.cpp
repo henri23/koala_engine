@@ -18,11 +18,13 @@ constexpr f64 TARGET_FRAME_TIME = 1.0f / 60;
 
 struct Application_State {
     Game* game_inst;
+
     b8 is_running;
     b8 is_suspended;
-    Platform_State platform_state;
+
     s16 width;
     s16 height;
+
     Absolute_Clock clock;
     Linear_Allocator systems_allocator;
 
@@ -115,14 +117,30 @@ b8 application_initialize(Game* game_inst) {
         return FALSE;
     }
 
-    // 2. Platform layer
+    // 2. Platform layer - Depends on: logger
+    platform_startup(
+        &application_state->platform_system_mem_req,
+        nullptr,
+        game_inst->config.name,
+        game_inst->config.start_pos_x,
+        game_inst->config.start_pos_y,
+        game_inst->config.start_width,
+        game_inst->config.start_height);
+
+    application_state->platform_system_state = linear_allocator_allocate(
+        &application_state->systems_allocator,
+        application_state->platform_system_mem_req);
+
     if (!platform_startup(
-            &application_state->platform_state,
+            &application_state->platform_system_mem_req,
+            application_state->platform_system_state,
             game_inst->config.name,
             game_inst->config.start_pos_x,
             game_inst->config.start_pos_y,
             game_inst->config.start_width,
-            game_inst->config.start_height)) { // Depends on: logger
+            game_inst->config.start_height)) {
+
+        ENGINE_ERROR("Failed to initialize platform. Aborting...");
         return FALSE;
     }
 
@@ -148,7 +166,7 @@ b8 application_initialize(Game* game_inst) {
     }
 
     // 5. Input subsystem - Depends on: logger, event, memory
-    input_startup(&application_state->input_system_mem_req, nullptr); 
+    input_startup(&application_state->input_system_mem_req, nullptr);
     application_state->input_system_state = linear_allocator_allocate(
         &application_state->systems_allocator,
         application_state->input_system_mem_req);
@@ -158,8 +176,7 @@ b8 application_initialize(Game* game_inst) {
 
     // 6. Renderer startup (Call frontend but implicitly starting backend)
     if (!renderer_startup(
-            application_state->game_inst->config.name,
-            &(application_state->platform_state))) {
+            application_state->game_inst->config.name )) {
         ENGINE_FATAL("Failed to initialize renderer frontend");
         return FALSE;
     }
@@ -216,7 +233,7 @@ void application_run() {
 
     while (application_state->is_running) {
         // For each iteration read the new messages from the message queue
-        if (!platform_message_pump(&application_state->platform_state)) {
+        if (!platform_message_pump()) {
             application_state->is_running = FALSE;
         }
 
@@ -314,7 +331,7 @@ void application_shutdown() {
     input_shutdown(application_state->input_system_state);
     event_shutdown(application_state->event_system_state);
     memory_shutdown(application_state->memory_system_state);
-    platform_shutdown(&application_state->platform_state);
+    platform_shutdown(application_state->platform_system_state);
     log_shutdown(application_state->logging_system_state);
 
     ENGINE_DEBUG("Application susbsytems stopped correctly");

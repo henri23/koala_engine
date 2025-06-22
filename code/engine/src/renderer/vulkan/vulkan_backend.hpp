@@ -3,8 +3,7 @@
 #include "renderer/renderer_types.inl"
 
 b8 vulkan_initialize(Renderer_Backend* backend,
-                     const char* app_name,
-                     struct Platform_State* plat_state);
+                     const char* app_name);
 
 void vulkan_shutdown(Renderer_Backend* backend);
 

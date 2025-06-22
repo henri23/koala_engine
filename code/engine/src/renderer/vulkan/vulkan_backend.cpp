@@ -55,8 +55,7 @@ b8 recreate_swapchain(Renderer_Backend* backend, b8 is_resized_event);
 
 b8 vulkan_initialize(
     Renderer_Backend* backend,
-    const char* app_name,
-    struct Platform_State* plat_state) {
+    const char* app_name) {
 
     // Function pointer assignment
     context.find_memory_index = find_memory_index;
@@ -171,7 +170,7 @@ b8 vulkan_initialize(
     // Create platform specific surface. Since the surface creation will
     // depend on the platform API, it is best that it is implemented in
     // the platform layer
-    if (!platform_create_vulkan_surface(&context, plat_state)) {
+    if (!platform_create_vulkan_surface(&context)) {
         ENGINE_FATAL("Failed to create platform specific surface");
 
         return FALSE;

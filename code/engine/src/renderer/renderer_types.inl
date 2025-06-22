@@ -6,12 +6,10 @@
 
 // Renderer_backend is the interface of the renderer classes
 struct Renderer_Backend {
-    struct Platform_State* plat_state;
     u64 frame_number;
 
     b8 (*initialize)(Renderer_Backend* backend,
-                     const char* app_name,
-                     struct Platform_State* plat_state);
+                     const char* app_name);
 
     void (*shutdown)(Renderer_Backend* backend);
 
