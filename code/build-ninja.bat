@@ -38,7 +38,7 @@ ninja koala_tests
 copy /Y "%BUILD_DIR%\engine\koala_engine.dll" "%BUILD_DIR%\tests"
 
 cd %BUILD_DIR%\tests
-start "" "koala_tests.exe"
+.\koala_tests.exe
 
 if errorlevel 1 (
     echo [BUILDER]: Build failed!
@@ -65,5 +65,5 @@ echo [BUILDER]: Build completed.
 echo ==============================================
 
 cd %BUILD_DIR%\testbed
-start "" "testbed.exe"
+.\testbed.exe
 
