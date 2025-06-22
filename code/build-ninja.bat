@@ -41,7 +41,7 @@ cd %BUILD_DIR%\tests
 .\koala_tests.exe
 
 if errorlevel 1 (
-    echo [BUILDER]: Build failed!
+    echo [BUILDER]: Tests failed! Aborting build...
     exit /b %errorlevel%
 )
 

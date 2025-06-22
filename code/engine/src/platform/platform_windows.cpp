@@ -180,6 +180,7 @@ void platform_console_write(const char *message, u8 colour) {
     u64 length = strlen(message);
     LPDWORD number_written = 0;
     WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD)length, number_written, 0);
+	SetConsoleTextAttribute(console_handle, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 }
 // Vulkan platform specific definitions
 void platform_get_required_extensions(Auto_Array<const char*>* required_extensions) {
