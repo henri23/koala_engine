@@ -9,10 +9,10 @@ add_subdirectory(engine)
 # Could just run tests separatelly inside bin with ctest but i prefer to include
 # test in my build script
 option(KOALA_BUILD_TESTS "Build Koala unit tests" ON)
-IF (KOALA_BUILD_TESTS)
-	enable_testing()
+# IF (KOALA_BUILD_TESTS)
+	# enable_testing()
 	add_subdirectory(tests)
-ENDIF()
+# ENDIF()
 
 # Build testbed app
 add_subdirectory(testbed)

@@ -128,8 +128,6 @@ b8 platform_startup(
 }
 
 void platform_shutdown(void* state) {
-    // Simply cold-cast to the known type.
-    Platform_state_ptr *state_ptr = (Platform_state_ptr *)plat_state_ptr->internal_state_ptr;
 
     if (state_ptr->hwnd) {
         DestroyWindow(state_ptr->hwnd);

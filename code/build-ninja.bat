@@ -24,6 +24,7 @@ cmake -G "Ninja" ^
     -DCMAKE_CXX_COMPILER=cl ^
     -DCMAKE_BUILD_TYPE=%CONFIG% ^
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ^
+	-DKOALA_BUILD_TESTS=ON ^
     -B %BUILD_DIR% .
 
 if errorlevel 1 (
@@ -31,10 +32,24 @@ if errorlevel 1 (
     exit /b %errorlevel%
 )
 
-REM Build project
 cd %BUILD_DIR%
+ninja koala_tests 
+
+copy /Y "%BUILD_DIR%\engine\koala_engine.dll" "%BUILD_DIR%\tests"
+
+cd %BUILD_DIR%\tests
+start "" "koala_tests.exe"
+
+if errorlevel 1 (
+    echo [BUILDER]: Build failed!
+    exit /b %errorlevel%
+)
+
+REM Build project
+cd ../ 
 @REM cmake --build %BUILD_DIR%
-ninja
+ninja testbed
+
 if errorlevel 1 (
     echo [BUILDER]: Build failed!
     exit /b %errorlevel%

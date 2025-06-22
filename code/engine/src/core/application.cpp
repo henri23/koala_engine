@@ -117,7 +117,21 @@ b8 application_initialize(Game* game_inst) {
         return FALSE;
     }
 
-    // 2. Platform layer - Depends on: logger
+    // 2. Event subsystem - Start before the platform because in Windows
+	// the platform layer can push events as soon as the window creates
+	// so the event subsystem must be available before that
+    event_startup(&application_state->event_system_mem_req, nullptr);
+    application_state->event_system_state = linear_allocator_allocate(
+        &application_state->systems_allocator,
+        application_state->event_system_mem_req);
+    if (!event_startup(
+            &application_state->event_system_mem_req,
+            application_state->event_system_state)) {
+        ENGINE_ERROR("Failed to start event subsystem. Already initialized!");
+        return FALSE;
+    }
+
+    // 3. Platform layer - Depends on: logger
     platform_startup(
         &application_state->platform_system_mem_req,
         nullptr,
@@ -144,7 +158,7 @@ b8 application_initialize(Game* game_inst) {
         return FALSE;
     }
 
-    // 3. Memory subsystem
+    // 4. Memory subsystem
     memory_startup(&application_state->memory_system_mem_req, nullptr);
     application_state->memory_system_state = linear_allocator_allocate(
         &application_state->systems_allocator,
@@ -153,17 +167,6 @@ b8 application_initialize(Game* game_inst) {
         &application_state->memory_system_mem_req,
         application_state->memory_system_state);
 
-    // 4. Event subsystem
-    event_startup(&application_state->event_system_mem_req, nullptr);
-    application_state->event_system_state = linear_allocator_allocate(
-        &application_state->systems_allocator,
-        application_state->event_system_mem_req);
-    if (!event_startup(
-            &application_state->event_system_mem_req,
-            application_state->event_system_state)) {
-        ENGINE_ERROR("Failed to start event subsystem. Already initialized!");
-        return FALSE;
-    }
 
     // 5. Input subsystem - Depends on: logger, event, memory
     input_startup(&application_state->input_system_mem_req, nullptr);

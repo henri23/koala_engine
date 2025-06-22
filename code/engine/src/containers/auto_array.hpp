@@ -9,7 +9,7 @@
 #define AUTO_DARRAY_EXPAND_FACTOR 2
 
 template <typename T>
-struct KOALA_API Auto_Array {
+struct Auto_Array {
     T* data;
     u64 capacity;
     u64 length;
