@@ -175,8 +175,20 @@ b8 application_initialize(Game* game_inst) {
         application_state->input_system_state);
 
     // 6. Renderer startup (Call frontend but implicitly starting backend)
+    renderer_startup(
+        &application_state->renderer_system_mem_req,
+        nullptr,
+        application_state->game_inst->config.name);
+
+    application_state->renderer_system_state = linear_allocator_allocate(
+        &application_state->systems_allocator,
+        application_state->renderer_system_mem_req);
+
     if (!renderer_startup(
-            application_state->game_inst->config.name )) {
+            &application_state->renderer_system_mem_req,
+            application_state->renderer_system_state,
+            application_state->game_inst->config.name)) {
+
         ENGINE_FATAL("Failed to initialize renderer frontend");
         return FALSE;
     }
@@ -327,7 +339,7 @@ void application_shutdown() {
         nullptr,
         application_on_key);
 
-    renderer_shutdown();
+    renderer_shutdown(application_state->renderer_system_state);
     input_shutdown(application_state->input_system_state);
     event_shutdown(application_state->event_system_state);
     memory_shutdown(application_state->memory_system_state);

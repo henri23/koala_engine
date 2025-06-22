@@ -5,9 +5,11 @@
 struct Static_Mesh_Data;
 
 b8 renderer_startup(
+    u64* memory_requirements,
+    void* state,
     const char* application_name);
 
-void renderer_shutdown();
+void renderer_shutdown(void* state);
 
 void renderer_on_resize(
     u16 width,

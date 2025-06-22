@@ -5,41 +5,47 @@
 #include "core/memory.hpp"
 
 // Renderer frontend will manage the backend interface state
-internal Renderer_Backend* backend;
+struct Renderer_System_State {
+    Renderer_Backend backend;
+};
+
+internal Renderer_System_State* state_ptr;
 
 b8 renderer_startup(
+    u64* memory_requirements,
+    void* state,
     const char* application_name) {
 
-    backend = static_cast<Renderer_Backend*>(
-        memory_allocate(
-            sizeof(Renderer_Backend),
-            Memory_Tag::RENDERER));
+    *memory_requirements = sizeof(Renderer_System_State);
+
+    if (state == nullptr) {
+        return TRUE;
+    }
+
+    state_ptr = static_cast<Renderer_System_State*>(state);
 
     if (!renderer_backend_initialize(
             Renderer_Backend_Type::VULKAN,
-            backend)) {
+            &state_ptr->backend)) {
 
         ENGINE_INFO("Failed to initialize renderer backend");
         return FALSE;
     }
 
-    backend->initialize(
-        backend,
+    state_ptr->backend.initialize(
+        &state_ptr->backend,
         application_name);
 
     ENGINE_DEBUG("Renderer subsystem initialized");
     return TRUE;
 }
 
-void renderer_shutdown() {
-    backend->shutdown(backend);
+void renderer_shutdown(void* state) {
+    state_ptr->backend.shutdown(&state_ptr->backend);
 
-    renderer_backend_shutdown(backend);
+    renderer_backend_shutdown(&state_ptr->backend);
 
-    memory_deallocate(
-        backend,
-        sizeof(Renderer_Backend),
-        Memory_Tag::RENDERER);
+	state_ptr = nullptr;
 
     ENGINE_DEBUG("Renderer subsystem shutting down...");
 }
@@ -48,24 +54,24 @@ void renderer_on_resize(
     u16 width,
     u16 height) {
 
-    backend->resized(
-        backend,
+    state_ptr->backend.resized(
+        &state_ptr->backend,
         width,
         height);
 }
 
 b8 renderer_begin_frame(f32 delta_t) {
-    return backend->begin_frame(
-        backend,
+    return state_ptr->backend.begin_frame(
+        &state_ptr->backend,
         delta_t);
 }
 
 b8 renderer_end_frame(f32 delta_t) {
-    b8 result = backend->end_frame(
-        backend,
+    b8 result = state_ptr->backend.end_frame(
+        &state_ptr->backend,
         delta_t);
 
-    backend->frame_number++;
+    state_ptr->backend.frame_number++;
     return result;
 }
 
