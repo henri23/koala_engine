@@ -837,10 +837,24 @@ b8 recreate_swapchain(Renderer_Backend* backend, b8 is_resized_event) {
 
         // We will have new cached framebuffer sized only if the on_resized
         // event was called, otherwise we need to just recreate the swapchain
-        // due to not optimal results of the present or get_next_image operations
+        // due to not optimal results of the present or get_next_image operation
         // of the swapchain
-        context.framebuffer_width = cached_framebuffer_width;
-        context.framebuffer_height = cached_framebuffer_height;
+		
+		// Ideally we would just want to recreate the swapchain with the new 
+		// dimension coming from an event of xcb. The problem with that is that
+		// the XCB events are asynchronous and can arrive before the Vulkan 
+		// surface has fully updated internally. This means that although we 
+		// request a specific width and height, the bounds of the extent could
+		// truncate such values, so we must consider the dimensions of the 
+		// created swapchain (after being truncated with the allowed bounds) 
+		// instead of the values that we wanted, to prevent inconsistencies
+        // context.framebuffer_width = cached_framebuffer_width;
+        // context.framebuffer_height = cached_framebuffer_height;
+		
+		// Overwrite the framebuffer dimensions to be equal to the swapchain
+        context.framebuffer_width = context.swapchain.extent.width;
+        context.framebuffer_height = context.swapchain.extent.height;
+
         context.main_renderpass.w = context.framebuffer_width;
         context.main_renderpass.h = context.framebuffer_height;
         cached_framebuffer_width = 0;
