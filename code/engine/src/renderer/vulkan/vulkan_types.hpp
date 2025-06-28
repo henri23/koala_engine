@@ -117,6 +117,25 @@ struct Vulkan_Fence {
     b8 is_signaled;
 };
 
+struct Vulkan_Shader_Stage {
+	VkShaderModuleCreateInfo create_info;
+	VkShaderModule handle;
+	VkPipelineShaderStageCreateInfo shader_stage_create_info;
+};
+
+struct Vulkan_Pipeline {
+	VkPipeline handle;
+	VkPipelineLayout pipeline_layout;
+};
+
+constexpr u32 OBJECT_SHADER_STAGE_COUNT = 2;
+
+struct Vulkan_Object_Shader {
+	Vulkan_Shader_Stage stage[OBJECT_SHADER_STAGE_COUNT];
+
+	Vulkan_Pipeline pipeline;
+};
+
 struct Vulkan_Context {
     VkInstance instance;
     VkSurfaceKHR surface;
