@@ -59,6 +59,8 @@ void filesystem_close(File_Handle* handle) {
     }
 }
 
+// line_buf char array will be allocated inside the method. No need for external
+// memory management
 b8 filesystem_read_line(
     File_Handle* handle,
     char** line_buf) {
@@ -67,6 +69,9 @@ b8 filesystem_read_line(
         char buffer[32000];
         // fgets stops reading when it encounters a /n, EOF or has read num - 1
         // where in this case num = 32000
+        // fgets returns the same pointer that is passed to it as the first arg
+        // in case of success and it returns NULL when it encounters an error or
+        // EOF
         if (fgets(buffer, 32000, (FILE*)handle->handle) != nullptr) {
             u64 length = strlen(buffer);
 
@@ -75,6 +80,8 @@ b8 filesystem_read_line(
                     (sizeof(char) * length) + 1,
                     Memory_Tag::STRING));
 
+            // Allocate a copy of the string in the heap so that we can return
+            // it as a result
             strcpy(*line_buf, buffer);
             return TRUE;
         }
@@ -136,6 +143,7 @@ b8 filesystem_read_all_bytes(
     File_Handle* handle,
     u8** out_bytes,
     u64* out_bytes_read) {
+
     if (handle->handle) {
         // This method does not preserve the file pointer, which in this case is
         // ok because I just want to read the whole file in this method
@@ -177,18 +185,17 @@ b8 filesystem_write(
     u64* out_bytes_written) {
 
     if (handle->handle) {
-		*out_bytes_written = fwrite(
-			data,
-			1,
-			data_size,
-			static_cast<FILE*>(handle->handle)
-		);
+        *out_bytes_written = fwrite(
+            data,
+            1,
+            data_size,
+            static_cast<FILE*>(handle->handle));
 
-		if(*out_bytes_written != data_size) {
-			return FALSE;
-		}
-		fflush(static_cast<FILE*>(handle->handle));
-		return TRUE;
+        if (*out_bytes_written != data_size) {
+            return FALSE;
+        }
+        fflush(static_cast<FILE*>(handle->handle));
+        return TRUE;
     }
-	return FALSE;
+    return FALSE;
 }

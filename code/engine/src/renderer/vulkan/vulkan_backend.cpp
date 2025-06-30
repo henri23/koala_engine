@@ -16,6 +16,8 @@
 
 #include "core/application.hpp"
 
+#include "shaders/vulkan_object_shader.hpp"
+
 internal Vulkan_Context context;
 internal u32 cached_framebuffer_width = 0;
 internal u32 cached_framebuffer_height = 0;
@@ -252,6 +254,11 @@ b8 vulkan_initialize(
         context.images_in_flight[i] = nullptr;
     }
 
+	// Create builtin shaders
+	if(!vulkan_object_shader_create(&context, &context.object_shader)) {
+		ENGINE_ERROR("Error loading built-in object shader");
+		return FALSE;
+	}
     ENGINE_INFO("Vulkan backend initialized");
 
     return TRUE;

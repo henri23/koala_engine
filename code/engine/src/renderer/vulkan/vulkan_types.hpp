@@ -131,7 +131,8 @@ struct Vulkan_Pipeline {
 constexpr u32 OBJECT_SHADER_STAGE_COUNT = 2;
 
 struct Vulkan_Object_Shader {
-	Vulkan_Shader_Stage stage[OBJECT_SHADER_STAGE_COUNT];
+	// The shader stage count is for vertex and fragment shaders
+	Vulkan_Shader_Stage stages[OBJECT_SHADER_STAGE_COUNT];
 
 	Vulkan_Pipeline pipeline;
 };
@@ -159,6 +160,8 @@ struct Vulkan_Context {
     u64 current_frame;
 
     b8 recreating_swapchain;
+
+	Vulkan_Object_Shader object_shader;
 
     Vulkan_Swapchain swapchain;
     Vulkan_Device device;

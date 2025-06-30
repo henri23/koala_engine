@@ -47,6 +47,16 @@ if [ $ERRORLEVEL -ne 0 ]; then
     echo "[BUILDER]: Error: $ERRORLEVEL" && exit
 fi
 
+echo "[BUILDER]: Compiling shaders..."
+cd ..
+sh ./code/post-build.sh
+
+# Check for errors
+ERRORLEVEL=$?
+if [ $ERRORLEVEL -ne 0 ]; then
+    echo "[BUILDER]: Error: $ERRORLEVEL" && exit
+fi
+
 # Record end time and calculate duration
 end_time=$(date +%s%3N)
 tottime=$(expr $end_time - $start_time)
