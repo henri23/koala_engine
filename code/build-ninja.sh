@@ -24,9 +24,12 @@ cd ../bin
 ln -sf "$(pwd)/compile_commands.json" ../code/compile_commands.json
 
 # Build with Ninja
+
+echo "=============================================="
 echo "[BUILDER]: Building tests..."
 time ninja koala_tests
 
+echo "=============================================="
 echo "[BUILDER]: Running tests..."
 ./tests/koala_tests
 TEST_EXIT_CODE=$?
@@ -38,6 +41,7 @@ fi
 
 # ctest
 
+echo "=============================================="
 echo "[BUILDER]: Building testbed..."
 time ninja testbed
 
@@ -47,9 +51,9 @@ if [ $ERRORLEVEL -ne 0 ]; then
     echo "[BUILDER]: Error: $ERRORLEVEL" && exit
 fi
 
+echo "=============================================="
 echo "[BUILDER]: Compiling shaders..."
-cd ..
-sh ./code/post-build.sh
+sh ../code/compile-shaders.sh
 
 # Check for errors
 ERRORLEVEL=$?
@@ -71,6 +75,6 @@ echo "[BUILDER]: Launching testbed..."
 echo "=============================================="
 echo ""
 
-cd testbed
-./testbed
+# cd testbed
+./testbed/testbed
 

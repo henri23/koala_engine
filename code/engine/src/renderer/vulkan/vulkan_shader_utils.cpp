@@ -28,7 +28,7 @@ b8 create_shader_module(
     File_Handle handle;
     if (!filesystem_open(
             file_name,
-            FILE_MODE_READ,
+            File_Modes::READ,
             TRUE,
             &handle)) {
         ENGINE_ERROR("Unable to read shader module: %s", file_name);

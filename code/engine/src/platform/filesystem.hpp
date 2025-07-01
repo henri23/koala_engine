@@ -9,9 +9,10 @@ struct File_Handle {
 
 // Use c-style enum as oposed to enum classes to use a bit map for the case of
 // read-write requests of handles
-enum File_Modes {
-    FILE_MODE_READ,
-    FILE_MODE_WRITE
+enum class File_Modes {
+    READ,
+    WRITE,
+	READ_WRITE
 };
 
 KOALA_API b8 filesystem_exists(const char* path);

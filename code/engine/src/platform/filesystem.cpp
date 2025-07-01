@@ -24,11 +24,11 @@ b8 filesystem_open(
     out_handle->handle = nullptr;
     const char* mode_str;
 
-    if ((mode & FILE_MODE_READ) != 0 && (mode & FILE_MODE_WRITE) != 0) {
+    if (mode == File_Modes::READ_WRITE) {
         mode_str = binary ? "w+b" : "w+";
-    } else if ((mode & FILE_MODE_READ) != 0 && (mode & FILE_MODE_WRITE) == 0) {
+    } else if (mode == File_Modes::READ) {
         mode_str = binary ? "rb" : "r";
-    } else if ((mode & FILE_MODE_READ) == 0 && (mode & FILE_MODE_WRITE) != 0) {
+    } else if (mode == File_Modes::WRITE) {
         mode_str = binary ? "wb" : "w";
     } else {
         ENGINE_ERROR(

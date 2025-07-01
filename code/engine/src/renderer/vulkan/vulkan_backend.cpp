@@ -259,6 +259,7 @@ b8 vulkan_initialize(
 		ENGINE_ERROR("Error loading built-in object shader");
 		return FALSE;
 	}
+
     ENGINE_INFO("Vulkan backend initialized");
 
     return TRUE;
