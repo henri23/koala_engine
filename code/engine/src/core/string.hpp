@@ -15,3 +15,6 @@ KOALA_API s32 string_format_v(
     char* dest,
     const char* format,
     va_list va_list);
+
+KOALA_API u64 string_length(
+    const char* string);

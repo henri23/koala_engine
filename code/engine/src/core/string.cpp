@@ -11,7 +11,7 @@ b8 string_check_equal(
     return strcmp(str1, str2) == 0;
 }
 
-KOALA_API s32 string_format(
+s32 string_format(
     char* dest,
     const char* format, ...) {
     if (dest) {
@@ -27,7 +27,7 @@ KOALA_API s32 string_format(
     return -1;
 }
 
-KOALA_API s32 string_format_v(
+s32 string_format_v(
     char* dest,
     const char* format,
     va_list va_list) {
@@ -41,4 +41,14 @@ KOALA_API s32 string_format_v(
     }
 
     return -1;
+}
+
+u64 string_length(const char* string) {
+	u64 length = 0;
+	// Continue to iterate inside the string until we find the 
+	// null terminator /0 whose ASCII value is 0
+	while(string[length] != 0) {
+		length++;
+	}
+	return length;
 }

@@ -254,11 +254,11 @@ b8 vulkan_initialize(
         context.images_in_flight[i] = nullptr;
     }
 
-	// Create builtin shaders
-	if(!vulkan_object_shader_create(&context, &context.object_shader)) {
-		ENGINE_ERROR("Error loading built-in object shader");
-		return false;
-	}
+    // Create builtin shaders
+    if (!vulkan_object_shader_create(&context, &context.object_shader)) {
+        ENGINE_ERROR("Error loading built-in object shader");
+        return false;
+    }
 
     ENGINE_INFO("Vulkan backend initialized");
 
@@ -272,6 +272,11 @@ void vulkan_shutdown(
     //			to wait until all operations have completed, so we do not get
     //			errors.
     vkDeviceWaitIdle(context.device.logical_device);
+
+    // Destroy shader modules
+    vulkan_object_shader_destroy(
+        &context,
+        &context.object_shader);
 
     // Destroy sync objects
     for (u8 i = 0; i < context.swapchain.max_in_flight_frames; ++i) {

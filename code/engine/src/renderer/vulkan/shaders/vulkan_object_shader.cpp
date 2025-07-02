@@ -40,6 +40,13 @@ b8 vulkan_object_shader_create(
 void vulkan_object_shader_destroy(
     Vulkan_Context* context,
     Vulkan_Object_Shader* shader) {
+
+	for(u32 i = 0; i < OBJECT_SHADER_STAGE_COUNT; ++i) {
+		vkDestroyShaderModule(
+			context->device.logical_device, 
+			shader->stages[i].handle, 
+			context->allocator);
+	}
 }
 
 void vulkan_object_shader_use(
