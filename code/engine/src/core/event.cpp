@@ -28,7 +28,7 @@ b8 event_startup(u64* mem_req, void* state) {
     *mem_req = sizeof(Event_System_State);
 
     if (state == nullptr) {
-        return TRUE;
+        return true;
     }
 
     state_ptr = static_cast<Event_System_State*>(state);
@@ -37,7 +37,7 @@ b8 event_startup(u64* mem_req, void* state) {
 
     ENGINE_DEBUG("Event subsystem initalized");
 
-    return TRUE;
+    return true;
 }
 
 void event_shutdown(void* state) {
@@ -63,7 +63,7 @@ b8 event_register_listener(
     for (u32 i = 0; i < events_array->length; ++i) {
         if ((*events_array)[i].listener == listener) {
             ENGINE_WARN("Listener for code is already registered");
-            return FALSE;
+            return false;
         }
     }
 
@@ -75,7 +75,7 @@ b8 event_register_listener(
 
     events_array->add(entry);
 
-    return TRUE;
+    return true;
 }
 
 b8 event_unregister_listener(
@@ -85,7 +85,7 @@ b8 event_unregister_listener(
 
     // Check if array is initiliazed
     if (!state_ptr->entries[(u16)code].event_listeners.data)
-        return FALSE;
+        return false;
 
     Auto_Array<Registered_Event>* events_array =
         &state_ptr->entries[(u16)code].event_listeners;
@@ -99,12 +99,12 @@ b8 event_unregister_listener(
 
             events_array->pop_at(i);
 
-            return TRUE;
+            return true;
         }
     }
 
     ENGINE_WARN("Listener not found");
-    return FALSE;
+    return false;
 }
 
 b8 event_fire(
@@ -114,7 +114,7 @@ b8 event_fire(
 
     // Check if array is initiliazed
     if (!state_ptr->entries[(u16)code].event_listeners.data)
-        return FALSE;
+        return false;
 
     Auto_Array<Registered_Event>* events = &state_ptr->entries[(u16)code].event_listeners;
 
@@ -126,13 +126,13 @@ b8 event_fire(
                 sender,
                 e.listener,
                 context)) {
-            // If a handler returns TRUE the event will not be consumed by the remaining listeners
-            return TRUE;
+            // If a handler returns true the event will not be consumed by the remaining listeners
+            return true;
         }
     }
 
     if (events->length == 0)
         ENGINE_WARN("No listener found for event");
 
-    return FALSE;
+    return false;
 }

@@ -30,11 +30,11 @@ b8 vulkan_object_shader_create(
                 stage_type_strs[i],
                 BUILTIN_SHADER_NAME_OBJECT);
 
-            return FALSE;
+            return false;
         }
     }
 
-    return TRUE;
+    return true;
 }
 
 void vulkan_object_shader_destroy(

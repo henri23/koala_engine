@@ -15,14 +15,14 @@ b8 renderer_backend_initialize(
         out_backend->begin_frame = vulkan_frame_render;
         out_backend->end_frame = vulkan_frame_present;
 
-        return TRUE;
+        return true;
     }
     case Renderer_Backend_Type::OPENGL:
     case Renderer_Backend_Type::DIRECTX:
         break;
     }
 
-    return FALSE;
+    return false;
 }
 
 void renderer_backend_shutdown(Renderer_Backend* backend) {

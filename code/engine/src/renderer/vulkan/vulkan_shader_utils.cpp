@@ -29,10 +29,10 @@ b8 create_shader_module(
     if (!filesystem_open(
             file_name,
             File_Modes::READ,
-            TRUE,
+            true,
             &handle)) {
         ENGINE_ERROR("Unable to read shader module: %s", file_name);
-        return FALSE;
+        return false;
     }
 
     // Read the entire file as binary
@@ -44,7 +44,7 @@ b8 create_shader_module(
             &file_byte_array,
             &size)) {
         ENGINE_ERROR("Unable to read bytes of the binary file: %s", file_name);
-        return FALSE;
+        return false;
     }
 
     // Set the size in bytes of the byte code
@@ -82,5 +82,5 @@ b8 create_shader_module(
         file_byte_array = nullptr;
     }
 
-    return TRUE;
+    return true;
 }

@@ -54,7 +54,7 @@ b8 platform_startup(u64* mem_req,
 	*mem_req = sizeof(Platform_State);
 
 	if(state == nullptr) {
-		return TRUE;
+		return true;
 	}
 
 	state_ptr = static_cast<Platform_State*>(state);
@@ -64,7 +64,7 @@ b8 platform_startup(u64* mem_req,
 
     if (xcb_connection_has_error(state_ptr->connection)) {
         ENGINE_FATAL("Error while establishing XCB connection");
-        return FALSE;
+        return false;
     }
 
     xcb_intern_atom_cookie_t intern_atom_cookie;
@@ -128,18 +128,18 @@ b8 platform_startup(u64* mem_req,
     s32 stream_flush = xcb_flush(state_ptr->connection);
     if (stream_flush <= 0) {
         ENGINE_FATAL("Error while flushing the stream: %d", stream_flush);
-        return FALSE;
+        return false;
     }
 
     state_ptr->key_symbols = xcb_key_symbols_alloc(state_ptr->connection);
     if (!state_ptr->key_symbols) {
         ENGINE_FATAL("Error while creating key map");
-        return FALSE;
+        return false;
     }
 
     ENGINE_DEBUG("Platform layer with LINUX interface initialized")
 
-    return TRUE;
+    return true;
 }
 
 // Vulkan platform specific definitions
@@ -165,13 +165,13 @@ b8 platform_create_vulkan_surface(Vulkan_Context* context) {
 
     ENGINE_INFO("Vulkan XCB surface created.");
 
-    return TRUE;
+    return true;
 }
 
 b8 platform_message_pump() {
     xcb_generic_event_t* generic_event;
 
-    b8 quit_flagged = FALSE;
+    b8 quit_flagged = false;
 
     while ((generic_event = xcb_poll_for_event(state_ptr->connection))) {
         switch (XCB_EVENT_RESPONSE_TYPE(generic_event)) {
@@ -262,7 +262,7 @@ b8 platform_message_pump() {
                 reinterpret_cast<xcb_client_message_event_t*>(generic_event);
 
             if (cm->data.data32[0] == state_ptr->wm_delete_protocol) {
-                quit_flagged = TRUE;
+                quit_flagged = true;
             }
         } break;
 		case XCB_CONFIGURE_NOTIFY: {

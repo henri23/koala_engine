@@ -60,30 +60,30 @@ void input_update(f64 delta_time) {
 
 b8 input_is_key_down(Keyboard_Key key) {
     if (!state_ptr)
-        return FALSE;
+        return false;
 
-    return state_ptr->keyboard_current.keys[(u16)key] == TRUE; // because in the state we save TRUE when key is down
+    return state_ptr->keyboard_current.keys[(u16)key] == true; // because in the state we save true when key is down
 }
 
 b8 input_is_key_up(Keyboard_Key key) {
     if (!state_ptr)
-        return TRUE;
+        return true;
 
-    return state_ptr->keyboard_current.keys[(u16)key] == FALSE;
+    return state_ptr->keyboard_current.keys[(u16)key] == false;
 }
 
 b8 input_was_key_down(Keyboard_Key key) {
     if (!state_ptr)
-        return FALSE;
+        return false;
 
-    return state_ptr->keyboard_previous.keys[(u16)key] == TRUE;
+    return state_ptr->keyboard_previous.keys[(u16)key] == true;
 }
 
 b8 input_was_key_up(Keyboard_Key key) {
     if (!state_ptr)
-        return TRUE;
+        return true;
 
-    return state_ptr->keyboard_previous.keys[(u16)key] == FALSE;
+    return state_ptr->keyboard_previous.keys[(u16)key] == false;
 }
 
 void input_process_key(
@@ -108,30 +108,30 @@ void input_process_key(
 
 b8 input_is_button_down(Mouse_Button button) {
     if (!state_ptr)
-        return FALSE;
+        return false;
 
-    return state_ptr->mouse_current.buttons[(u16)button] == TRUE;
+    return state_ptr->mouse_current.buttons[(u16)button] == true;
 }
 
 b8 input_is_button_up(Mouse_Button button) {
     if (!state_ptr)
-        return TRUE;
+        return true;
 
-    return state_ptr->mouse_current.buttons[(u16)button] == FALSE;
+    return state_ptr->mouse_current.buttons[(u16)button] == false;
 }
 
 b8 input_was_button_down(Mouse_Button button) {
     if (!state_ptr)
-        return FALSE;
+        return false;
 
-    return state_ptr->mouse_previous.buttons[(u16)button] == TRUE;
+    return state_ptr->mouse_previous.buttons[(u16)button] == true;
 }
 
 b8 input_was_button_up(Mouse_Button button) {
     if (!state_ptr)
-        return TRUE;
+        return true;
 
-    return state_ptr->mouse_previous.buttons[(u16)button] == FALSE;
+    return state_ptr->mouse_previous.buttons[(u16)button] == false;
 }
 
 void input_get_current_mouse_position(s32* x, s32* y) {

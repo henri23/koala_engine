@@ -76,7 +76,7 @@ b8 application_initialize(Game* game_inst) {
     // Protect the application state from being initialized multiple times
     if (game_inst->application_state != nullptr) {
         ENGINE_ERROR("Engine subsystems are already initialized");
-        return FALSE;
+        return false;
     }
 
     game_inst->application_state = memory_allocate(
@@ -87,8 +87,8 @@ b8 application_initialize(Game* game_inst) {
         game_inst->application_state);
     application_state->game_inst = game_inst;
 
-    application_state->is_running = FALSE;
-    application_state->is_suspended = FALSE;
+    application_state->is_running = false;
+    application_state->is_suspended = false;
 
     // Setup linear allocator
     u64 systems_alloc_total_size = 64 * 1024 * 1024; // For now just set to a large number
@@ -114,7 +114,7 @@ b8 application_initialize(Game* game_inst) {
             &application_state->logging_system_mem_req,
             application_state->logging_system_state)) {
         ENGINE_ERROR("Failed to initialize logging subsystem; shutting down");
-        return FALSE;
+        return false;
     }
 
     // 2. Event subsystem - Start before the platform because in Windows
@@ -128,7 +128,7 @@ b8 application_initialize(Game* game_inst) {
             &application_state->event_system_mem_req,
             application_state->event_system_state)) {
         ENGINE_ERROR("Failed to start event subsystem. Already initialized!");
-        return FALSE;
+        return false;
     }
 
     // 3. Platform layer - Depends on: logger
@@ -155,7 +155,7 @@ b8 application_initialize(Game* game_inst) {
             game_inst->config.start_height)) {
 
         ENGINE_ERROR("Failed to initialize platform. Aborting...");
-        return FALSE;
+        return false;
     }
 
     // 4. Memory subsystem
@@ -193,7 +193,7 @@ b8 application_initialize(Game* game_inst) {
             application_state->game_inst->config.name)) {
 
         ENGINE_FATAL("Failed to initialize renderer frontend");
-        return FALSE;
+        return false;
     }
 
     // Event listener registration
@@ -220,7 +220,7 @@ b8 application_initialize(Game* game_inst) {
     if (!application_state->game_inst->initialize(
             application_state->game_inst)) {
         ENGINE_ERROR("Failed to create game");
-        return FALSE;
+        return false;
     }
 
     application_state->game_inst->on_resize(
@@ -228,17 +228,17 @@ b8 application_initialize(Game* game_inst) {
         application_state->width,
         application_state->height);
 
-    application_state->is_suspended = FALSE;
+    application_state->is_suspended = false;
 
     ENGINE_DEBUG("Subsystems initialized correctly.");
 
     ENGINE_DEBUG(memory_get_current_usage()); // WARN: Memory leak because the heap allocated string must be deallocated
 
-    return TRUE;
+    return true;
 }
 
 void application_run() {
-    application_state->is_running = TRUE;
+    application_state->is_running = true;
     ENGINE_DEBUG("Application loop is starting...");
 
     absolute_clock_start(&application_state->clock);
@@ -249,7 +249,7 @@ void application_run() {
     while (application_state->is_running) {
         // For each iteration read the new messages from the message queue
         if (!platform_message_pump()) {
-            application_state->is_running = FALSE;
+            application_state->is_running = false;
         }
 
         // Frame
@@ -267,7 +267,7 @@ void application_run() {
                     application_state->game_inst,
                     static_cast<f32>(delta_t))) {
                 ENGINE_FATAL("Game update failed. Aborting");
-                application_state->is_running = FALSE;
+                application_state->is_running = false;
                 break;
             }
 
@@ -275,7 +275,7 @@ void application_run() {
                     application_state->game_inst,
                     static_cast<f32>(delta_t))) {
                 ENGINE_FATAL("Game render failed. Aborting");
-                application_state->is_running = FALSE;
+                application_state->is_running = false;
                 break;
             }
 
@@ -283,7 +283,7 @@ void application_run() {
             packet.delta_time = delta_t;
 
             if (!renderer_draw_frame(&packet)) {
-                application_state->is_running = FALSE;
+                application_state->is_running = false;
             }
 
             f64 frame_end_time = platform_get_absolute_time();
@@ -307,7 +307,7 @@ void application_run() {
         }
     }
 
-    application_state->is_running = FALSE;
+    application_state->is_running = false;
 
     absolute_clock_stop(&application_state->clock);
     application_shutdown();
@@ -359,11 +359,11 @@ b8 application_on_event(
     Event_Context data) {
     switch (code) {
     case Event_Code::APPLICATION_QUIT:
-        application_state->is_running = FALSE;
-        return TRUE; // Stop other listeners from consuming the message
+        application_state->is_running = false;
+        return true; // Stop other listeners from consuming the message
     default:
         // Propagate event to other listeners
-        return FALSE;
+        return false;
     }
 }
 
@@ -385,7 +385,7 @@ b8 application_on_key(
                 nullptr,
                 data);
 
-            return TRUE;
+            return true;
 
         } else if (key == Keyboard_Key::A) {
             ENGINE_INFO("Explicit key 'A' pressed");
@@ -402,10 +402,10 @@ b8 application_on_key(
     } break;
 
     default:
-        return FALSE;
+        return false;
     }
 
-    return FALSE;
+    return false;
 }
 
 b8 application_on_resized(
@@ -429,12 +429,12 @@ b8 application_on_resized(
             // Handle minimization
             if (width == 0 || height == 0) {
                 ENGINE_INFO("Windows minimized, suspending application.");
-                application_state->is_suspended = TRUE;
-                return TRUE;
+                application_state->is_suspended = true;
+                return true;
             } else {
                 if (application_state->is_suspended) {
                     ENGINE_INFO("Window restored, resuming application");
-                    application_state->is_suspended = FALSE;
+                    application_state->is_suspended = false;
                 }
 
                 application_state->game_inst->on_resize(
@@ -447,5 +447,5 @@ b8 application_on_resized(
         }
     }
 
-    return TRUE;
+    return true;
 }

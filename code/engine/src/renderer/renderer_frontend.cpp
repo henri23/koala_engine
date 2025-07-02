@@ -19,7 +19,7 @@ b8 renderer_startup(
     *memory_requirements = sizeof(Renderer_System_State);
 
     if (state == nullptr) {
-        return TRUE;
+        return true;
     }
 
     state_ptr = static_cast<Renderer_System_State*>(state);
@@ -29,7 +29,7 @@ b8 renderer_startup(
             &state_ptr->backend)) {
 
         ENGINE_INFO("Failed to initialize renderer backend");
-        return FALSE;
+        return false;
     }
 
     state_ptr->backend.initialize(
@@ -37,7 +37,7 @@ b8 renderer_startup(
         application_name);
 
     ENGINE_DEBUG("Renderer subsystem initialized");
-    return TRUE;
+    return true;
 }
 
 void renderer_shutdown(void* state) {
@@ -82,9 +82,9 @@ b8 renderer_draw_frame(Render_Packet* packet) {
 
         if (!result) {
             ENGINE_ERROR("renderer_end_frame failed. Application shutting down...");
-            return FALSE;
+            return false;
         }
     }
 
-    return TRUE;
+    return true;
 }

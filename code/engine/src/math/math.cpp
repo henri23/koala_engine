@@ -4,7 +4,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-internal b8 rand_seeded = FALSE;
+internal b8 rand_seeded = false;
 
 f32 math_sin(f32 x) {
     return sinf(x);
@@ -33,7 +33,7 @@ f32 math_abs_value(f32 x) {
 s32 math_random_signed() {
     if (!rand_seeded) {
         srand((u32)platform_get_absolute_time()); // pseudo-random seed
-        rand_seeded = TRUE;
+        rand_seeded = true;
     }
     return rand();
 }
@@ -45,7 +45,7 @@ f32 math_random_float() {
 s32 math_random_signed_in_range(s32 min, s32 max) {
     if (!rand_seeded) {
         srand((u32)platform_get_absolute_time()); // pseudo-random seed
-        rand_seeded = TRUE;
+        rand_seeded = true;
     }
     return (rand() % (max - min + 1) + min);
 }

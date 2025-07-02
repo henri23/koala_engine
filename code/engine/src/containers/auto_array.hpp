@@ -32,7 +32,7 @@ struct Auto_Array {
         ++length;
     }
 
-    void reserve(u64 data_count, b8 prefilled = TRUE) {
+    void reserve(u64 data_count, b8 prefilled = true) {
         capacity = data_count;
 
         data = static_cast<T*>(

@@ -36,16 +36,16 @@ b8 vulkan_device_initialize(
     // Select physical device in the machine
     if (!select_physical_device(context, requirements)) {
         ENGINE_FATAL("Failed to select physical device. Aborting...");
-        return FALSE;
+        return false;
     }
 
     // Create logical device
     if (!create_logical_device(context)) {
         ENGINE_FATAL("Failed to create logical device. Aborting...");
-        return FALSE;
+        return false;
     }
 
-    return TRUE;
+    return true;
 }
 
 // TODO: Get back to this method as it is not clear enough
@@ -70,16 +70,16 @@ b8 vulkan_device_detect_depth_format(Vulkan_Device* device) {
 
         if ((properties.linearTilingFeatures & flags) == flags) {
             device->depth_format = candidates[i];
-            return TRUE;
+            return true;
         }
 
         if ((properties.optimalTilingFeatures & flags) == flags) {
             device->depth_format = candidates[i];
-            return TRUE;
+            return true;
         }
     }
 
-    return FALSE;
+    return false;
 }
 
 b8 select_physical_device(Vulkan_Context* context,
@@ -92,7 +92,7 @@ b8 select_physical_device(Vulkan_Context* context,
 
     // Check if there's at least one GPU that supports Vulkan
     if (physical_device_count == 0)
-        return FALSE;
+        return false;
 
     // C++ compiler (in windows) does not allow for variable length arrays
     // Allocate in heap and then deallocate to keep the compiler happy
@@ -199,10 +199,10 @@ b8 select_physical_device(Vulkan_Context* context,
     physical_devices_array.free();
 
     if (context->device.physical_device) {
-        return TRUE;
+        return true;
     }
 
-    return FALSE;
+    return false;
 }
 
 b8 create_logical_device(Vulkan_Context* context) {
@@ -313,7 +313,7 @@ b8 create_logical_device(Vulkan_Context* context) {
 
 	ENGINE_INFO("Graphics command pool created");
 
-    return TRUE;
+    return true;
 }
 
 // TODO: 	For now the algorithm just checks if the current GPU fullfills
@@ -356,7 +356,7 @@ b8 is_device_suitable(
     if (requirements->discrete_gpu &&
         properties->deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
         ENGINE_DEBUG("Device is not a discrete GPU. Skipping.");
-        return FALSE;
+        return false;
     }
 
     ENGINE_INFO("Graphics | Present | Compute | Transfer | Name");
@@ -455,7 +455,7 @@ b8 is_device_suitable(
             }
 
             ENGINE_DEBUG("Swapchain is not fully supported. Skipping device.");
-            return FALSE;
+            return false;
         }
 
         ENGINE_INFO("Device '%s' has swapchain support",
@@ -491,13 +491,13 @@ b8 is_device_suitable(
                 extension_properties));
 
             for (u32 i = 0; i < requirements->device_extension_names->length; ++i) {
-                b8 found = FALSE;
+                b8 found = false;
 
                 for (u32 j = 0; j < available_extensions_count; ++j) {
                     if (string_check_equal(
                             extension_properties[j].extensionName,
                             requirements->device_extension_names->data[i]) == 0) {
-                        found = TRUE;
+                        found = true;
                         break;
                     }
                 }
@@ -513,7 +513,7 @@ b8 is_device_suitable(
                         sizeof(VkExtensionProperties) * available_extensions_count,
                         Memory_Tag::RENDERER);
 
-                    return FALSE;
+                    return false;
                 }
             }
 
@@ -523,10 +523,10 @@ b8 is_device_suitable(
                 Memory_Tag::RENDERER);
         }
 
-        return TRUE;
+        return true;
     }
 
-    return FALSE;
+    return false;
 }
 
 // This function could be called multiple times, but the memory is freed only

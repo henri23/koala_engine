@@ -41,7 +41,7 @@ void vulkan_fence_destroy(
         fence->handle = nullptr;
     }
 
-    fence->is_signaled = FALSE;
+    fence->is_signaled = false;
 }
 
 b8 vulkan_fence_wait(
@@ -54,14 +54,14 @@ b8 vulkan_fence_wait(
             context->device.logical_device,
             1,
             &fence->handle,
-            TRUE,
+            true,
             timeout_ns);
 
         switch (result) {
 
         case VK_SUCCESS:
-            fence->is_signaled = TRUE;
-            return TRUE;
+            fence->is_signaled = true;
+            return true;
         case VK_TIMEOUT:
             ENGINE_WARN("vk_fence_wait - Timed out");
             break;
@@ -79,10 +79,10 @@ b8 vulkan_fence_wait(
             break;
         }
     } else {
-        return TRUE;
+        return true;
     }
 
-    return FALSE;
+    return false;
 }
 
 void vulkan_fence_reset(
@@ -96,6 +96,6 @@ void vulkan_fence_reset(
                 1,
                 &fence->handle));
 
-        fence->is_signaled = FALSE;
+        fence->is_signaled = false;
     }
 }

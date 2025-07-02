@@ -20,7 +20,7 @@ b8 filesystem_open(
     b8 binary,
     File_Handle* out_handle) {
 
-    out_handle->is_valid = FALSE;
+    out_handle->is_valid = false;
     out_handle->handle = nullptr;
     const char* mode_str;
 
@@ -35,27 +35,27 @@ b8 filesystem_open(
             "Invalid mode passed while trying to open file: '%s'",
             path);
 
-        return FALSE;
+        return false;
     }
 
     FILE* file = fopen(path, mode_str);
 
     if (!file) {
         ENGINE_ERROR("Error while opening file: '%s'", path);
-        return FALSE;
+        return false;
     }
 
     out_handle->handle = file;
-    out_handle->is_valid = TRUE;
+    out_handle->is_valid = true;
 
-    return TRUE;
+    return true;
 }
 
 void filesystem_close(File_Handle* handle) {
     if (handle->handle) {
         fclose(static_cast<FILE*>(handle->handle));
         handle->handle = nullptr;
-        handle->is_valid = FALSE;
+        handle->is_valid = false;
     }
 }
 
@@ -83,11 +83,11 @@ b8 filesystem_read_line(
             // Allocate a copy of the string in the heap so that we can return
             // it as a result
             strcpy(*line_buf, buffer);
-            return TRUE;
+            return true;
         }
     }
 
-    return FALSE;
+    return false;
 }
 
 b8 filesystem_write_line(
@@ -107,7 +107,7 @@ b8 filesystem_write_line(
         return result != EOF;
     }
 
-    return FALSE;
+    return false;
 }
 
 // Read certain number of bytes from a file
@@ -127,13 +127,13 @@ b8 filesystem_read(
             static_cast<FILE*>(handle->handle));
 
         if (*out_bytes_read != data_size) {
-            return FALSE;
+            return false;
         }
 
-        return TRUE;
+        return true;
     }
 
-    return FALSE;
+    return false;
 }
 
 // The out_bytes will be pointer to a byte array allocated and populated by this
@@ -170,12 +170,12 @@ b8 filesystem_read_all_bytes(
             static_cast<FILE*>(handle->handle));
 
         if (*out_bytes_read != size)
-            return FALSE;
+            return false;
 
-        return TRUE;
+        return true;
     }
 
-    return FALSE;
+    return false;
 }
 
 b8 filesystem_write(
@@ -192,10 +192,10 @@ b8 filesystem_write(
             static_cast<FILE*>(handle->handle));
 
         if (*out_bytes_written != data_size) {
-            return FALSE;
+            return false;
         }
         fflush(static_cast<FILE*>(handle->handle));
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }

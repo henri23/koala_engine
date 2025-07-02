@@ -5,7 +5,7 @@
 
 b8 game_initialize(Game* game_inst) {
     GAME_INFO("Called game_initialize()");
-    return TRUE;
+    return true;
 }
 
 b8 game_update(Game* game_inst, f32 delta_time) {
@@ -23,12 +23,12 @@ b8 game_update(Game* game_inst, f32 delta_time) {
             alloc_count - current_alloc_count);
     }
 
-    return TRUE;
+    return true;
 }
 
 b8 game_render(Game* game_inst, f32 delta_time) {
     // GAME_INFO("Called game_render()");
-    return TRUE;
+    return true;
 }
 
 void game_on_resize(Game* game_inst, u32 width, u32 height) {

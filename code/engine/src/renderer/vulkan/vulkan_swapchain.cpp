@@ -31,14 +31,14 @@ void create_swapchain(
     // The formats and present modes array are setup on device selection in
     // vulkan_device_query_swapchain_capabilities()
 
-    b8 found = FALSE;
+    b8 found = false;
     for (u32 i = 0; i < swapchain_info->formats_count; ++i) {
         if (swapchain_info->formats[i].format ==
                 VK_FORMAT_B8G8R8_SRGB &&
             swapchain_info->formats[i].colorSpace ==
                 VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             out_swapchain->image_format = swapchain_info->formats[i];
-            found = TRUE;
+            found = true;
             break;
         }
     }
@@ -59,14 +59,14 @@ void create_swapchain(
     // it is the most similar to how OpenGl works, however my first choice
     // would be VK_PRESENT_MODE_MAILBOX_KHR
     VkPresentModeKHR selected_present_mode;
-    found = FALSE;
+    found = false;
 
     for (u32 i = 0; i < swapchain_info->present_modes_count; ++i) {
         if (swapchain_info->present_modes[i] ==
             VK_PRESENT_MODE_MAILBOX_KHR) {
 
             selected_present_mode = swapchain_info->present_modes[i];
-            found = TRUE;
+            found = true;
             break;
         }
     }
@@ -248,7 +248,7 @@ void create_swapchain(
         VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        TRUE,
+        true,
         VK_IMAGE_ASPECT_DEPTH_BIT,
         &out_swapchain->depth_attachment);
 

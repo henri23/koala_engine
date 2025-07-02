@@ -47,7 +47,7 @@ enum class Event_Code : u16 {
 // When an event is processed in the bus, we should call the handlers that are
 // interested to this event. In order for the handlers to be called, they must
 // implement the same interface so we need to specify the function signature of
-// an event handler. If a handler returns TRUE no other handler consumes the 
+// an event handler. If a handler returns true no other handler consumes the 
 // event!
 typedef b8 (*PFN_Event_Handler)(Event_Code code, void* sender, void* listener_inst, Event_Context data);
 

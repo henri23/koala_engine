@@ -67,7 +67,7 @@ void* memory_allocate(u64 size, Memory_Tag tag) {
     }
 
     // Every chunk of memory will be set to 0 automatically
-    void* block = platform_allocate(size, TRUE);
+    void* block = platform_allocate(size, true);
 
     platform_zero_memory(block, size);
 
@@ -82,7 +82,7 @@ void memory_deallocate(void* block, u64 size, Memory_Tag tag) {
         state_ptr->stats.total_allocated -= size;
     }
 
-    return platform_free(block, TRUE);
+    return platform_free(block, true);
 }
 
 void* memory_zero(void* block, u64 size) {
@@ -90,7 +90,7 @@ void* memory_zero(void* block, u64 size) {
 }
 
 void* memory_copy(void* destination, const void* source, u64 size) {
-    b8 is_overlap = FALSE;
+    b8 is_overlap = false;
 
     u64 dest_addr = reinterpret_cast<u64>(destination);
     u64 source_addr = reinterpret_cast<u64>(source);
@@ -105,9 +105,9 @@ void* memory_copy(void* destination, const void* source, u64 size) {
     // will be incremented by ('size' - 1). So if the max_addr coincides with min_addr + size - 1
     // there will be overlap.
     if (source_addr > dest_addr && source_addr < dest_addr + size)
-        is_overlap = TRUE;
+        is_overlap = true;
     else if (dest_addr > source_addr && dest_addr < source_addr + size)
-        is_overlap = TRUE;
+        is_overlap = true;
 
     if (!is_overlap)
         return platform_copy_memory(destination, source, size);

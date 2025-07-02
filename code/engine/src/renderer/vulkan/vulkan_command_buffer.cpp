@@ -117,14 +117,14 @@ void vulkan_command_buffer_startup_single_use(
     vulkan_command_buffer_allocate(
         context,
         pool,
-        TRUE,
+        true,
         out_command_buffer);
 
     vulkan_command_buffer_begin(
         out_command_buffer,
-        TRUE,
-        FALSE,
-        FALSE);
+        true,
+        false,
+        false);
 }
 
 void vulkan_command_buffer_end_single_use(

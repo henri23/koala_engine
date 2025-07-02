@@ -22,15 +22,15 @@ b8 log_startup(u64* memory_requirement, void* state) {
 	*memory_requirement = sizeof(Logger_System_State);
 
 	if(state == nullptr) {
-		return TRUE;
+		return true;
 	}
 
 	state_ptr = static_cast<Logger_System_State*>(state);
-	state_ptr->initialized = TRUE;
+	state_ptr->initialized = true;
 
     ENGINE_DEBUG("Loggin subsystem initialized");
     // TODO: create log file
-    return TRUE;
+    return true;
 }
 
 void log_shutdown(void* state) {

@@ -132,12 +132,12 @@ KOALA_INLINE vec2 vec2_norm_copy(vec2 a) {
 
 KOALA_INLINE b8 vec2_are_equal(vec2 a, vec2 b, f32 tolerance) {
     if (math_abs_value(a.x - b.x) > tolerance)
-        return FALSE;
+        return false;
 
     if (math_abs_value(a.y - b.y) > tolerance)
-        return FALSE;
+        return false;
 
-    return TRUE;
+    return true;
 }
 
 KOALA_INLINE f32 vec2_distance(vec2 a, vec2 b) {
@@ -259,15 +259,15 @@ KOALA_INLINE vec3 vec3_norm_copy(vec3 a) {
 
 KOALA_INLINE b8 vec3_are_equal(vec3 a, vec3 b, f32 tolerance) {
     if (math_abs_value(a.x - b.x) > tolerance)
-        return FALSE;
+        return false;
 
     if (math_abs_value(a.y - b.y) > tolerance)
-        return FALSE;
+        return false;
 
     if (math_abs_value(a.z - b.z) > tolerance)
-        return FALSE;
+        return false;
 
-    return TRUE;
+    return true;
 }
 
 KOALA_INLINE f32 vec3_distance(vec3 a, vec3 b) {
