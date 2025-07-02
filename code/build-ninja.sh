@@ -51,9 +51,9 @@ if [ $ERRORLEVEL -ne 0 ]; then
     echo "[BUILDER]: Error: $ERRORLEVEL" && exit
 fi
 
-echo "=============================================="
-echo "[BUILDER]: Compiling shaders..."
-sh ../code/compile-shaders.sh
+# echo "=============================================="
+# echo "[BUILDER]: Compiling shaders..."
+# sh ../code/compile-shaders.sh
 
 # Check for errors
 ERRORLEVEL=$?

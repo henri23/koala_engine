@@ -1,20 +1,44 @@
 @echo off
+setlocal
 
-REM Run from root directory
-if not exist "%cd%\bin\assets\shaders" mkdir "%cd%\bin\assets\shaders"
+rem Resolve script directory
+set SCRIPT_DIR=%~dp0
+rem Remove trailing backslash if exists
+if "%SCRIPT_DIR:~-1%"=="\" set SCRIPT_DIR=%SCRIPT_DIR:~0,-1%
 
-echo "Compiling shaders..."
+rem Calculate root directory (parent of script directory)
+for %%I in ("%SCRIPT_DIR%\..") do set ROOT_DIR=%%~fI
 
-echo "assets/shaders/Builtin.ObjectShader.vert.glsl -> bin/assets/shaders/Builtin.ObjectShader.vert.spv"
-%VULKAN_SDK%\bin\glslc.exe -fshader-stage=vert assets/shaders/Builtin.ObjectShader.vert.glsl -o bin/assets/shaders/Builtin.ObjectShader.vert.spv
-IF %ERRORLEVEL% NEQ 0 (echo Error: %ERRORLEVEL% && exit)
+set BIN_ASSETS_DIR=%ROOT_DIR%\bin\assets
+set BIN_SHADERS_DIR=%BIN_ASSETS_DIR%\shaders
 
-echo "assets/shaders/Builtin.ObjectShader.frag.glsl -> bin/assets/shaders/Builtin.ObjectShader.frag.spv"
-%VULKAN_SDK%\bin\glslc.exe -fshader-stage=frag assets/shaders/Builtin.ObjectShader.frag.glsl -o bin/assets/shaders/Builtin.ObjectShader.frag.spv
-IF %ERRORLEVEL% NEQ 0 (echo Error: %ERRORLEVEL% && exit)
+rem Create output directories
+if not exist "%BIN_SHADERS_DIR%" mkdir "%BIN_SHADERS_DIR%"
 
-echo "Copying assets..."
-echo xcopy "assets" "bin\assets" /h /i /c /k /e /r /y
-xcopy "assets" "bin\assets" /h /i /c /k /e /r /y
+echo Compiling shaders...
 
-echo "Done."
+rem Ensure VULKAN_SDK is set
+if "%VULKAN_SDK%"=="" (
+    echo Error: VULKAN_SDK environment variable is not set
+    exit /b 1
+)
+
+rem Vertex shader
+"%VULKAN_SDK%\Bin\glslc.exe" -fshader-stage=vert "%SCRIPT_DIR%\assets\shaders\Builtin.ObjectShader.vert.glsl" -o "%BIN_SHADERS_DIR%\Builtin.ObjectShader.vert.spv"
+if errorlevel 1 (
+    echo Error: vertex shader compilation failed
+    exit /b 1
+)
+
+rem Fragment shader
+"%VULKAN_SDK%\Bin\glslc.exe" -fshader-stage=frag "%SCRIPT_DIR%\assets\shaders\Builtin.ObjectShader.frag.glsl" -o "%BIN_SHADERS_DIR%\Builtin.ObjectShader.frag.spv"
+if errorlevel 1 (
+    echo Error: fragment shader compilation failed
+    exit /b 1
+)
+
+echo Copying assets...
+xcopy /E /I /Y "%SCRIPT_DIR%\assets" "%ROOT_DIR%\bin\assets"
+
+echo Done.
+endlocal
