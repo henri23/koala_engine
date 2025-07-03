@@ -12,25 +12,43 @@
 // just a showcase to use the linear allocator
 
 struct Logger_System_State {
-    File_Handle log_file_handle;
+    File_Handle engine_log_file_handle;
+    File_Handle game_log_file_handle;
 };
 
 internal Logger_System_State* state_ptr;
 
-void append_to_log_file(const char* message) {
-    if (state_ptr && state_ptr->log_file_handle.is_valid) {
+void append_to_log_file(Log_Scope scope, const char* message) {
+    if (state_ptr &&
+        state_ptr->engine_log_file_handle.is_valid &&
+        state_ptr->game_log_file_handle.is_valid) {
         // The message already contains the character \n because it is
         // formatted
         u64 length = string_length(message);
         u64 written = 0;
-        if (!filesystem_write(
-                &state_ptr->log_file_handle,
-                length,
-                message,
-                &written)) {
-            platform_console_write_error(
-                "ERROR writing to console.log",
-                static_cast<u8>(Log_Level::ERROR));
+
+        if (scope == Log_Scope::ENGINE) {
+            if (!filesystem_write(
+                    &state_ptr->engine_log_file_handle,
+                    length,
+                    message,
+                    &written)) {
+
+                platform_console_write_error(
+                    "ERROR writing to console.log",
+                    static_cast<u8>(Log_Level::ERROR));
+            }
+        } else if (scope == Log_Scope::GAME) {
+            if (!filesystem_write(
+                    &state_ptr->game_log_file_handle,
+                    length,
+                    message,
+                    &written)) {
+
+                platform_console_write_error(
+                    "ERROR writing to console.log",
+                    static_cast<u8>(Log_Level::ERROR));
+            }
         }
     }
 }
@@ -50,15 +68,29 @@ b8 log_startup(u64* memory_requirement, void* state) {
 
     ENGINE_DEBUG("Loggin subsystem initialized");
 
-    // Create log file or wipe an existing one
+    // Create log file for game 
     if (!filesystem_open(
-            "console.log",
+            "game-console.log",
             File_Modes::WRITE,
             false,
-            &state_ptr->log_file_handle)) {
+            &state_ptr->game_log_file_handle)) {
 
         platform_console_write_error(
-            "ERROR: Unable to open console.log for writing",
+            "ERROR: Unable to open game-console.log for writing",
+            static_cast<u8>(Log_Level::ERROR));
+
+        return false;
+    }
+
+    // Create log file for the engine 
+    if (!filesystem_open(
+            "engine-console.log",
+            File_Modes::WRITE,
+            false,
+            &state_ptr->engine_log_file_handle)) {
+
+        platform_console_write_error(
+            "ERROR: Unable to open engine-console.log for writing",
             static_cast<u8>(Log_Level::ERROR));
 
         return false;
@@ -117,7 +149,7 @@ void log_output(Log_Scope scope, Log_Level level, const char* message, ...) {
         // Platform specific output
         platform_console_write(out_message, static_cast<u64>(level));
 
-    append_to_log_file(out_message);
+    append_to_log_file(scope, out_message);
 }
 
 KOALA_API void report_assertion_failure(
