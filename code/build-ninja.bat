@@ -67,6 +67,6 @@ copy /Y "%BUILD_DIR%\engine\koala_engine.dll" "%BUILD_DIR%\testbed"
 echo [BUILDER]: Build completed.
 echo ==============================================
 
-cd %BUILD_DIR%\testbed
-.\testbed.exe
+cd %BUILD_DIR%
+.\testbed\testbed.exe
 
