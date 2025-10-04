@@ -66,3 +66,7 @@ typedef vec4 quaternion;
 struct mat4 {
 	alignas(16) f32 elements[16];
 };
+
+struct vertex_3d { 
+	vec3 position;
+};
